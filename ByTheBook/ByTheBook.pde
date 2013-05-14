@@ -1,26 +1,26 @@
 import toxi.geom.*;
 import toxi.processing.*;
-
-// stomach types
-int AVERAGE_STOMACH = 0, FLAT_STOMACH = 1, PROTRUDING_STOMACH = 2;
+import processing.pdf.*;
 
 // should be abstracted into a class
 // all units in inches
 // measured on lisa
-float inseam = 31; // crotch to floor
-float waist = 26; // waist circumference
+float inseam = 31; // crotch to floor (not used)
+float waist = 26; // waist circumference (not used)
+
 float sideseam = 38.4; // waist to hemline (not floor to waist)
 float hipCircumference = 35; // the "fullest part of your hip" 
 float crotchDepth = 8; // from waist to seat when you're sitting
 float hemCircumference = 12; // also called "ankle", based on your favorite pants
 float stomachOffset = -3/8.; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach)
-float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8
+float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8 (very little difference)
 
 PVector A, B, p1, p2, p3, p4, p5;
 PVector p6, p7, p8, p6a;
 PVector p9, p10, p11, p12;
 PVector p13, p14, p2b, p2c, p8b;
 PVector p7a, p6b;
+PVector D, Aa, p5a;
 PFont font;
 
 void setup() {
@@ -28,7 +28,14 @@ void setup() {
 
   font = createFont("Arial", 12);
   textFont(font);
+  
+  update();
+  beginRecord(PDF, "out.pdf");
+  draw();
+  endRecord();
+}
 
+void update() {
   // mark points
   A = new PVector(0, 0);
   B = A.get();
@@ -80,6 +87,14 @@ void setup() {
   p7a.x += stomachOffset;
   p6b = p6.get();
   p6b.x += crotchOffset;
+  
+  // curve the waistline
+  D = p7a.get();
+  D.x = p9.x;
+  Aa = A.get();
+  Aa.x += 1.; // should be along bezier (p7a, D, D, A)
+  p5a = PVector.add(p5, A);
+  p5a.div(2);
 }
 
 PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
@@ -100,9 +115,28 @@ Line2D makeLine(PVector a, PVector b) {
 }
 
 void draw() {
+  //hemCircumference = mouseX / 3.;
+  //crotchDepth = mouseY / 10.;
+  //sideseam = mouseX;
+  //stomachOffset = map(mouseX, 0, width, -3/8., +5/8.);
+  //crotchOffset = map(mouseX, 0, width, 1/4., 3/8.);
+  update();
+  
   background(255);
   float pointSize = 6;
   float drawingScale = 20;
+  
+  // grid
+  stroke(200);
+  int xsegments = int(width / drawingScale);
+  int ysegments = int(height / drawingScale);
+  println(xsegments);
+  for(int y = 0; y < ysegments; y++) {
+    line(0, y * drawingScale, width, y * drawingScale);
+  }
+  for(int x = 0; x < xsegments; x++) {
+    line(x * drawingScale, 0, x * drawingScale, height);
+  }
 
   // horizontal lines
   noFill();
@@ -154,7 +188,9 @@ void draw() {
 
   // beziers
   PVector[] bezierPoints = {
-    p7a, p6b, p8b, p2b
+    p7a, p6b, p8b, p2b,
+    p7a, D, D, A,
+    p5, p5a, p5a, Aa
   };
   for (int i = 0; i < bezierPoints.length; i += 4) {
     bezier(drawingScale * bezierPoints[i].x, drawingScale * bezierPoints[i].y, 
@@ -172,14 +208,14 @@ void draw() {
     p5, p6, p7, p8, p6a, 
     p9, p10, p11, p12, 
     p13, p14, p2b, p2c, p8b, 
-    p7a, p6b
+    p7a, p6b,
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", 
     "5", "6", "7", "8", "6a", 
     "9", "10", "11", "12", 
     "13", "14", "2b", "2c", "8b", 
-    "7a", "6b"
+    "7a", "6b",
   };
   for (int i = 0; i < points.length; i++) {
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale;
