@@ -1,6 +1,9 @@
 import toxi.geom.*;
 import toxi.processing.*;
 
+// stomach types
+int AVERAGE_STOMACH = 0, FLAT_STOMACH = 1, PROTRUDING_STOMACH = 2;
+
 // should be abstracted into a class
 // all units in inches
 // measured on lisa
@@ -10,11 +13,14 @@ float sideseam = 38.4; // waist to hemline (not floor to waist)
 float hipCircumference = 35; // the "fullest part of your hip" 
 float crotchDepth = 8; // from waist to seat when you're sitting
 float hemCircumference = 12; // also called "ankle", based on your favorite pants
+float stomachOffset = -3/8.; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach)
+float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8
 
 PVector A, B, p1, p2, p3, p4, p5;
 PVector p6, p7, p8, p6a;
 PVector p9, p10, p11, p12;
 PVector p13, p14, p2b, p2c, p8b;
+PVector p7a, p6b;
 PFont font;
 
 void setup() {
@@ -68,6 +74,12 @@ void setup() {
   p2c.div(2);
   p8b = p8.get();
   p8b.y -= (p2c.x - p8.x);
+
+  // adjust for the stomach
+  p7a = p7.get();
+  p7a.x += stomachOffset;
+  p6b = p6.get();
+  p6b.x += crotchOffset;
 }
 
 PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
@@ -132,13 +144,24 @@ void draw() {
   stroke(0, 0, 200);
   PVector[] linePairs = {
     p13, p5, 
-    p14, p6a,
+    p14, p6a, 
     p8b, p2b
   };
   for (int i = 0; i < linePairs.length; i += 2) {
     line(drawingScale * linePairs[i].x, drawingScale * linePairs[i].y, 
     drawingScale * linePairs[i+1].x, drawingScale * linePairs[i+1].y);
   }
+
+  // beziers
+  PVector[] bezierPoints = {
+    p7a, p6b, p8b, p2b
+  };
+  for (int i = 0; i < bezierPoints.length; i += 4) {
+    bezier(drawingScale * bezierPoints[i].x, drawingScale * bezierPoints[i].y, 
+    drawingScale * bezierPoints[i+1].x, drawingScale * bezierPoints[i+1].y, 
+    drawingScale * bezierPoints[i+2].x, drawingScale * bezierPoints[i+2].y, 
+    drawingScale * bezierPoints[i+3].x, drawingScale * bezierPoints[i+3].y);
+  }  
 
   // points
   noStroke();
@@ -148,13 +171,15 @@ void draw() {
     A, B, p1, p2, p3, p4, 
     p5, p6, p7, p8, p6a, 
     p9, p10, p11, p12, 
-    p13, p14, p2b, p2c, p8b
+    p13, p14, p2b, p2c, p8b, 
+    p7a, p6b
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", 
     "5", "6", "7", "8", "6a", 
     "9", "10", "11", "12", 
-    "13", "14", "2b", "2c", "8b"
+    "13", "14", "2b", "2c", "8b", 
+    "7a", "6b"
   };
   for (int i = 0; i < points.length; i++) {
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale;
