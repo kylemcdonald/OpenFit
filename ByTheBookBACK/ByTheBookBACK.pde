@@ -27,6 +27,10 @@ PVector p13, p14, p2b, p2c, p8b; //shape the front leg
 
 //specific to back draft
 PVector p15, p16, p17;
+PVector p18, p20; // p19 = yike, need toxilibs?
+
+//beziers
+PVector p4a, p4b,  p21; // y = waistline, x = extension of 4a to 18 line
 
 void setup() {
   size(400, 700);
@@ -84,13 +88,19 @@ void update(){ // <-- compute stuff here: how points are related
   p8b.y -= (p2c.x - p8.x);
   
   //BACK DRAFT:
-  //find the center back:
+  //find the center back
   p15 = p9.get();
   p15.x += 3/8.;
   p16 = p15.get();
   p16.x += (((hipCircumference / 4.) + 3/8.)/ 4.);
   p17 = p2.get();
   p17.y -= derriereShape; 
+  
+  //shift the hips
+  p18 = p16.get();
+  p18.x -= (hipCircumference / 4.) + 3/8.;
+  p20 = p15.get();
+  p20.x += (p15.x-p18.x); //double check, was sleepy 
 }
 
 // toxilibs stuff is confusing... all for p2b?
@@ -121,7 +131,7 @@ void draw() {
   background(255);
   float pointSize = 6;
   float drawingScale = 13;
-  //drawingScale = map(mouseX, 0, width, 5, 50);
+  drawingScale = map(mouseX, 0, width, 5, 50);
   
   //points
   noStroke();
@@ -132,14 +142,14 @@ void draw() {
     p6, p6a, p7, p8,
     p9, p10, p11, p12,
     p13, p14, p2b, p2c, p8b,
-    p15, p16, p17,
+    p15, p16, p17, p18, p20
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", "5",
     "6", "6a", "7", "8",
     "9", "10", "11", "12",
     "13", "14", "2b", "2c", "8b",
-    "15", "16", "17",
+    "15", "16", "17", "18", "20",
     
   };
   for (int i = 0; i < points.length; i++){
@@ -149,7 +159,6 @@ void draw() {
   }
   
   //horizontal lines
-  noFill();
   stroke(200);
   textAlign(RIGHT, BOTTOM);
   PVector[] horizontalLines = {
@@ -165,7 +174,6 @@ void draw() {
   }
   
   //vertical lines
-  noFill();
   stroke(200);
   PVector[] verticalLines = {
     p6, p9, p1
@@ -185,7 +193,6 @@ void draw() {
   }
   
   //line pairs - front draft, in faded blue
-  noFill();
   stroke(0, 0, 255, 50);
   PVector[] linePairs = {
     p13, p5,
@@ -200,7 +207,6 @@ void draw() {
   }
 
   //line pairs - back draft, in green
-  noFill();
   stroke(0, 255, 0);
   PVector[] linePairsBack = {
     p15, p11,
@@ -213,16 +219,23 @@ void draw() {
     linePairsBack[i+1].y * drawingScale);
   }
   
-  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back
+  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back (CB)
   pushMatrix();
   translate(p16.x*drawingScale,p16.y*drawingScale);
-  noFill();
   stroke(0, 255, 0);
   rotate(radians(90));
   line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
   rotate(radians(-5));
   text("Center Back",0,0);
   popMatrix();
-   
+  
+  //draw a line from p18 parallel to linePairsBack p16, p17
+  //this should extend to CB, the intersection of this and CB should be p19
+  pushMatrix();
+  translate(p18.x*drawingScale,p18.y*drawingScale); 
+  stroke(0, 255, 0);
+  line(0, 0,(p16.x*drawingScale)-(p17.x*drawingScale),-((p17.y*drawingScale)-(p16.y*drawingScale)));
+  popMatrix();
+  
 }
 
