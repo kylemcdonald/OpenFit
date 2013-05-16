@@ -6,13 +6,16 @@ import toxi.processing.*;
 // measured on lisa
 float inseam = 31; // crotch to floor (not used)
 float waist = 26; // waist circumference (not used)
+float stomachOffset = -3/8.; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach) (not in back)
+float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8 (very little difference) (not in back)
 
 float sideseam = 38.4; // waist to hemline (not floor to waist)
 float hipCircumference = 35; // the "fullest part of your hip" 
 float crotchDepth = 8; // from waist to seat when you're sitting
 float hemCircumference = 12; // also called "ankle", based on your favorite pants
-float stomachOffset = -3/8.; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach)
-float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8 (very little difference)
+
+float derriereShape = 2; // normal/average derriere: 1+5/8, flat derriere: 2, protruding derriere: 7/8
+
 
 PFont font;
 
@@ -23,9 +26,10 @@ PVector p9, p10, p11, p12; //establish the crease
 PVector p13, p14, p2b, p2c, p8b; //shape the front leg
 
 //specific to back draft
+PVector p15, p16, p17;
 
 void setup() {
-  size(300, 600);
+  size(400, 700);
   font = createFont("Arial", 12);
   textFont(font);  
   //need to call update(); in setup?
@@ -79,7 +83,14 @@ void update(){ // <-- compute stuff here: how points are related
   p8b = p8.get();
   p8b.y -= (p2c.x - p8.x);
   
-
+  //BACK DRAFT:
+  //find the center back:
+  p15 = p9.get();
+  p15.x += 3/8.;
+  p16 = p15.get();
+  p16.x += (((hipCircumference / 4.) + 3/8.)/ 4.);
+  p17 = p2.get();
+  p17.y -= derriereShape; 
 }
 
 // toxilibs stuff is confusing... all for p2b?
@@ -103,11 +114,14 @@ Line2D makeLine(PVector a, PVector b) {
 
 void draw() {
   update(); // <-- forget this and you will have null pointer exception frustration!
- 
+  
+  float translationAmount = 100 ;
+  translate(translationAmount,translationAmount); // put translation somewhere else? 
+  
   background(255);
   float pointSize = 6;
   float drawingScale = 13;
-  //drawingScale = map(mouseX, 0, width, 5, 20);
+  //drawingScale = map(mouseX, 0, width, 5, 50);
   
   //points
   noStroke();
@@ -118,12 +132,15 @@ void draw() {
     p6, p6a, p7, p8,
     p9, p10, p11, p12,
     p13, p14, p2b, p2c, p8b,
+    p15, p16, p17,
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", "5",
     "6", "6a", "7", "8",
     "9", "10", "11", "12",
-    "13", "14", "2b", "2c", "p8",
+    "13", "14", "2b", "2c", "8b",
+    "15", "16", "17",
+    
   };
   for (int i = 0; i < points.length; i++){
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
@@ -143,31 +160,31 @@ void draw() {
   };
   for (int i = 0; i < horizontalLines.length; i++) {
     float y = horizontalLines[i].y * drawingScale;
-    line(0, y, width, y);
-    text(horizontalLineLabels[i], width, y);
+    line(0- translationAmount, y, width- translationAmount, y);
+    text(horizontalLineLabels[i], (width- translationAmount), y);
   }
   
   //vertical lines
   noFill();
   stroke(200);
   PVector[] verticalLines = {
-    p6, p9
+    p6, p9, p1
   };
   String[] verticalLineLabels = {
-    "", "Crease Line",
+    "", "Crease Line", "",
   };
   for (int i = 0; i < verticalLines.length; i++) {
     float x = verticalLines[i].x * drawingScale;
-    line(x, 0, x, height);
+    line(x, 0 - translationAmount, x, height - translationAmount);
     // turn crease line label sideways 
     pushMatrix();
-    translate(x, height / 2);
+    translate(x, (height- translationAmount) / 2);
     rotate(-HALF_PI);
     text(verticalLineLabels[i], 0, 0);
     popMatrix();
   }
   
-  //line pairs
+  //line pairs - front draft, in faded blue
   noFill();
   stroke(0, 0, 255, 50);
   PVector[] linePairs = {
@@ -181,6 +198,31 @@ void draw() {
     linePairs[i+1].x * drawingScale,
     linePairs[i+1].y * drawingScale);
   }
+
+  //line pairs - back draft, in green
+  noFill();
+  stroke(0, 255, 0);
+  PVector[] linePairsBack = {
+    p15, p11,
+    p17, p16,
+  };
+  for (int i = 0; i < linePairsBack.length; i += 2) {
+    line(linePairsBack[i].x * drawingScale,
+    linePairsBack[i].y * drawingScale,
+    linePairsBack[i+1].x * drawingScale,
+    linePairsBack[i+1].y * drawingScale);
+  }
   
+  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back
+  pushMatrix();
+  translate(p16.x*drawingScale,p16.y*drawingScale);
+  noFill();
+  stroke(0, 255, 0);
+  rotate(radians(90));
+  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
+  rotate(radians(-5));
+  text("Center Back",0,0);
+  popMatrix();
+   
 }
 
