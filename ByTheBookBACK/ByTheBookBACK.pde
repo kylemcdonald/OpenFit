@@ -1,7 +1,7 @@
 import toxi.geom.*;
 import toxi.processing.*;
 
-// should be abstracted into a class, but I have no idea how :)
+// should be abstracted into a class
 // all units in inches
 // measured on lisa
 float inseam = 31; // crotch to floor (not used)
@@ -27,10 +27,15 @@ PVector p13, p14, p2b, p2c, p8b; //shape the front leg
 
 //specific to back draft
 PVector p15, p16, p17;
-PVector p18, p20; // p19 = yike, need toxilibs?
+PVector p18, p19, p20; //p19 = toxiclibs + transformations
+
+PVector p4a, p4b;
+//PVector CB;
 
 //beziers
-PVector p4a, p4b,  p21; // y = waistline, x = extension of 4a to 18 line
+//PVector p4a, p4b, p21; // p21: y = waistline, x = extension of 4a to 18 line
+
+boolean drawGrid= true;
 
 void setup() {
   size(400, 700);
@@ -39,9 +44,8 @@ void setup() {
   //need to call update(); in setup?
 }
 
-void update(){ // <-- compute stuff here: how points are related
+void update(){ 
   // mark points
-  // remember: 0 is at top, therefore plus is down!
   A = new PVector(0,0);
   B = A.get();
   B.y += 5/8. + sideseam;
@@ -101,9 +105,15 @@ void update(){ // <-- compute stuff here: how points are related
   p18.x -= (hipCircumference / 4.) + 3/8.;
   p20 = p15.get();
   p20.x += (p15.x-p18.x); //double check, was sleepy 
+  //p19 = return actual value of p16 after translation
+  
+  p4a = intersectAtDistance(p13,p5,p4,p11);
+  p4b = intersectAtDistance(p6a,p14,p4,p11);
+  
+  
 }
 
-// toxilibs stuff is confusing... all for p2b?
+// calculate location of p2b using toxiclibs
 
 PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
   float maxScale = 10; // line has to be within this normalized distance
@@ -120,18 +130,19 @@ Line2D makeLine(PVector a, PVector b) {
   Vec2D va = new Vec2D(a.x, a.y);
   Vec2D vb = new Vec2D(b.x, b.y);
   return new Line2D(va, vb);
-}  
+}
 
 void draw() {
-  update(); // <-- forget this and you will have null pointer exception frustration!
-  
-  float translationAmount = 100 ;
-  translate(translationAmount,translationAmount); // put translation somewhere else? 
-  
   background(255);
+  update(); 
   float pointSize = 6;
   float drawingScale = 13;
-  drawingScale = map(mouseX, 0, width, 5, 50);
+  //drawingScale = map(mouseX, 0, width, 5, 50);
+
+  if(drawGrid) grid(drawingScale);
+  float translationAmount = 100 ;
+//  translate(translationAmount,translationAmount); // put translation somewhere else? 
+  
   
   //points
   noStroke();
@@ -142,7 +153,8 @@ void draw() {
     p6, p6a, p7, p8,
     p9, p10, p11, p12,
     p13, p14, p2b, p2c, p8b,
-    p15, p16, p17, p18, p20
+    p15, p16, p17, p18, p20,
+    p4a, p4b,
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", "5",
@@ -150,7 +162,7 @@ void draw() {
     "9", "10", "11", "12",
     "13", "14", "2b", "2c", "8b",
     "15", "16", "17", "18", "20",
-    
+    "4a", "4b",
   };
   for (int i = 0; i < points.length; i++){
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
@@ -220,22 +232,46 @@ void draw() {
   }
   
   //square a line perpendicular to linePairsBack p16, p17 & declare Center Back (CB)
-  pushMatrix();
-  translate(p16.x*drawingScale,p16.y*drawingScale);
-  stroke(0, 255, 0);
-  rotate(radians(90));
-  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
-  rotate(radians(-5));
-  text("Center Back",0,0);
-  popMatrix();
+//  pushMatrix();
+//  translate(p16.x*drawingScale,p16.y*drawingScale);
+//  stroke(0, 255, 0);
+//  rotate(radians(90));
+//  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
+//  rotate(radians(-5));
+//  text("Center Back",0,0);
+//  popMatrix();
+
+// trying to get the perpendicular to a line from point 16 to 17 using toxiclibs  
+//  pushStyle();
+//  Vec2D from16to17 = new Vec2D(p16.x-p17.x, p16.y-p17.y);
+//  Vec2D centerBack = new Vec2D(from16to17.perpendicular());
+//  CB = new PVector (centerBack.x, centerBack.y);
+//  stroke(0);
+//  line(CB.x*drawingScale,CB.y*drawingScale, CB.x*drawingScale*2, CB.y*drawingScale*2);
+//  popStyle();
   
   //draw a line from p18 parallel to linePairsBack p16, p17
   //this should extend to CB, the intersection of this and CB should be p19
   pushMatrix();
-  translate(p18.x*drawingScale,p18.y*drawingScale); 
-  stroke(0, 255, 0);
-  line(0, 0,(p16.x*drawingScale)-(p17.x*drawingScale),-((p17.y*drawingScale)-(p16.y*drawingScale)));
+  translate((p18.x*drawingScale)-(p17.x*drawingScale), (p18.y*drawingScale)-(p17.y*drawingScale)); 
+  stroke(255,0, 0);
+  line(p17.x*drawingScale, p17.y*drawingScale, p16.x*drawingScale, p16.y*drawingScale);
+  
   popMatrix();
   
+}
+
+void grid(float drawingScale){
+  // grid
+  stroke(150,150,150,30);
+  int xsegments = int(width / drawingScale);
+  int ysegments = int(height / drawingScale);
+  for(int y = 0; y < ysegments; y++) {
+    line(0, y * drawingScale, width, y * drawingScale);
+  }
+  for(int x = 0; x < xsegments; x++) {
+    line(x * drawingScale, 0, x * drawingScale, height);
+  }
+
 }
 
