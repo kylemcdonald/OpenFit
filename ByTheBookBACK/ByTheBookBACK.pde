@@ -1,3 +1,10 @@
+/*
+Missing:
+1 determine the perpendicular from line 16 tp 17.
+2 calculate the paralel to 16 to 17
+3 point 19
+
+*/
 import toxi.geom.*;
 import toxi.processing.*;
 
@@ -16,7 +23,6 @@ float hemCircumference = 12; // also called "ankle", based on your favorite pant
 
 float derriereShape = 2; // normal/average derriere: 1+5/8, flat derriere: 2, protruding derriere: 7/8
 
-
 PFont font;
 
 //also in front draft
@@ -29,19 +35,152 @@ PVector p13, p14, p2b, p2c, p8b; //shape the front leg
 PVector p15, p16, p17;
 PVector p18, p19, p20; //p19 = toxiclibs + transformations
 
-PVector p4a, p4b;
-//PVector CB;
+PVector p4a, p4b, p13out, p14out, p4Aout, p4Bout, p21;
 
-//beziers
-//PVector p4a, p4b, p21; // p21: y = waistline, x = extension of 4a to 18 line
 
-boolean drawGrid= true;
+boolean drawGrid= false;
 
 void setup() {
   size(400, 700);
   font = createFont("Arial", 12);
   textFont(font);  
-  //need to call update(); in setup?
+}
+
+void draw() {
+  background(255);
+  float translationAmount = 100 ;
+
+  update(); 
+  float pointSize = 6;
+  float drawingScale = 13;
+  drawingScale = map(mouseX, 0, width, 5, 50);
+
+  if(drawGrid) grid(drawingScale);
+  translate(translationAmount,translationAmount); // put translation somewhere else? 
+
+  //points
+  noStroke();
+  fill(0);
+  textAlign(LEFT, CENTER);
+  PVector[] points = {
+    A, B, p1, p2, p3, p4, p5,
+    p6, p6a, p7, p8,
+    p9, p10, p11, p12,
+    p13, p14, p2b, p2c, p8b,
+    p15, p16, p17, p18, p20,
+    p4a, p4b, p13out, p14out, p4Aout, p4Bout,
+    p21,
+  };
+  String[] pointLabels = {
+    "A", "B", "1", "2", "3", "4", "5",
+    "6", "6a", "7", "8",
+    "9", "10", "11", "12",
+    "13", "14", "2b", "2c", "8b",
+    "15", "16", "17", "18", "20",
+    "4a", "4b", "13out","14out","4aout","4bout",
+    "21",
+  };
+  for (int i = 0; i < points.length; i++){
+    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+    ellipse(x, y, pointSize, pointSize); 
+    text(pointLabels[i], x + pointSize, y); 
+  }
+  
+  //horizontal lines
+  stroke(200);
+  textAlign(RIGHT, BOTTOM);
+  PVector[] horizontalLines = {
+  p1, p2, p4, p5, B,
+  };
+  String[] horizontalLineLabels = {
+  "Waist", "Crotch Depth", "Knee", "Hipline", "Hemline", 
+  };
+  for (int i = 0; i < horizontalLines.length; i++) {
+    float y = horizontalLines[i].y * drawingScale;
+    line(0- translationAmount, y, width- translationAmount, y);
+    text(horizontalLineLabels[i], (width- translationAmount), y);
+  }
+  
+  //vertical lines
+  stroke(200);
+  PVector[] verticalLines = {
+    p6, p9, p1
+  };
+  String[] verticalLineLabels = {
+    "", "Crease Line", "",
+  };
+  for (int i = 0; i < verticalLines.length; i++) {
+    float x = verticalLines[i].x * drawingScale;
+    line(x, 0 - translationAmount, x, height - translationAmount);
+    // turn crease line label sideways 
+    pushMatrix();
+    translate(x, (height- translationAmount) / 2);
+    rotate(-HALF_PI);
+    text(verticalLineLabels[i], 0, 0);
+    popMatrix();
+  }
+  
+  //line pairs - front draft, in faded blue
+  stroke(0, 0, 255, 50);
+  PVector[] linePairs = {
+    p13, p5,
+    p14, p6a,
+    p2b, p8b,
+  };
+  for (int i = 0; i < linePairs.length; i += 2) {
+    line(linePairs[i].x * drawingScale,
+    linePairs[i].y * drawingScale,
+    linePairs[i+1].x * drawingScale,
+    linePairs[i+1].y * drawingScale);
+  }
+
+  //line pairs - back draft, in green
+  stroke(0, 255, 0);
+  PVector[] linePairsBack = {
+    p15, p11,
+    p17, p16,
+    p11,p21,
+  };
+  for (int i = 0; i < linePairsBack.length; i += 2) {
+    line(linePairsBack[i].x * drawingScale,
+    linePairsBack[i].y * drawingScale,
+    linePairsBack[i+1].x * drawingScale,
+    linePairsBack[i+1].y * drawingScale);
+  }
+  
+  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back (CB)
+//  pushMatrix();
+//  translate(p16.x*drawingScale,p16.y*drawingScale);
+//  stroke(0, 255, 0);
+//  rotate(radians(90));
+//  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
+//  rotate(radians(-5));
+//  text("Center Back",0,0);
+//  popMatrix();
+
+// trying to get the perpendicular to a line from point 16 to 17 using toxiclibs  
+//  pushStyle();
+//  Vec2D from16to17 = new Vec2D(p16.x-p17.x, p16.y-p17.y);
+//  Vec2D centerBack = new Vec2D(from16to17.perpendicular());
+//  CB = new PVector (centerBack.x, centerBack.y);
+//  stroke(0);
+//  line(CB.x*drawingScale,CB.y*drawingScale, CB.x*drawingScale*2, CB.y*drawingScale*2);
+//  popStyle();
+  
+  //draw a line from p18 parallel to linePairsBack p16, p17
+  //this should extend to CB, the intersection of this and CB should be p19
+  pushMatrix();
+  translate((p18.x*drawingScale)-(p17.x*drawingScale), (p18.y*drawingScale)-(p17.y*drawingScale)); 
+  stroke(255,0, 0);
+  line(p17.x*drawingScale, p17.y*drawingScale, p16.x*drawingScale, p16.y*drawingScale);
+  popMatrix();
+  
+  pushStyle();
+  stroke(0,200,0);
+  noFill();
+  drawBezier(p21, p18, p4Aout, p13out,drawingScale);
+  drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
+  popStyle();
 }
 
 void update(){ 
@@ -107,14 +246,23 @@ void update(){
   p20.x += (p15.x-p18.x); //double check, was sleepy 
   //p19 = return actual value of p16 after translation
   
+  //draw the outside lines
   p4a = intersectAtDistance(p13,p5,p4,p11);
   p4b = intersectAtDistance(p6a,p14,p4,p11);
+  p13out = p13.get();
+  p13out.x -= 3/4.;
+  p14out = p14.get();
+  p14out.x += 3/4.;
+  p4Aout = p4a.get();
+  p4Aout.x -= 3/4.;
+  p4Bout = p4b.get();
+  p4Bout.x += 3/4.;
   
+  p21 = intersectAtDistance(p18,p4Aout,p1, p7);
   
 }
 
 // calculate location of p2b using toxiclibs
-
 PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
   float maxScale = 10; // line has to be within this normalized distance
   Line2D ab = makeLine(a, b);
@@ -132,134 +280,6 @@ Line2D makeLine(PVector a, PVector b) {
   return new Line2D(va, vb);
 }
 
-void draw() {
-  background(255);
-  update(); 
-  float pointSize = 6;
-  float drawingScale = 13;
-  //drawingScale = map(mouseX, 0, width, 5, 50);
-
-  if(drawGrid) grid(drawingScale);
-  float translationAmount = 100 ;
-//  translate(translationAmount,translationAmount); // put translation somewhere else? 
-  
-  
-  //points
-  noStroke();
-  fill(0);
-  textAlign(LEFT, CENTER);
-  PVector[] points = {
-    A, B, p1, p2, p3, p4, p5,
-    p6, p6a, p7, p8,
-    p9, p10, p11, p12,
-    p13, p14, p2b, p2c, p8b,
-    p15, p16, p17, p18, p20,
-    p4a, p4b,
-  };
-  String[] pointLabels = {
-    "A", "B", "1", "2", "3", "4", "5",
-    "6", "6a", "7", "8",
-    "9", "10", "11", "12",
-    "13", "14", "2b", "2c", "8b",
-    "15", "16", "17", "18", "20",
-    "4a", "4b",
-  };
-  for (int i = 0; i < points.length; i++){
-    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
-    ellipse(x, y, pointSize, pointSize); 
-    text(pointLabels[i], x + pointSize, y); 
-  }
-  
-  //horizontal lines
-  stroke(200);
-  textAlign(RIGHT, BOTTOM);
-  PVector[] horizontalLines = {
-  p1, p2, p4, p5, B,
-  };
-  String[] horizontalLineLabels = {
-  "Waist", "Crotch Depth", "Knee", "Hipline", "Hemline", 
-  };
-  for (int i = 0; i < horizontalLines.length; i++) {
-    float y = horizontalLines[i].y * drawingScale;
-    line(0- translationAmount, y, width- translationAmount, y);
-    text(horizontalLineLabels[i], (width- translationAmount), y);
-  }
-  
-  //vertical lines
-  stroke(200);
-  PVector[] verticalLines = {
-    p6, p9, p1
-  };
-  String[] verticalLineLabels = {
-    "", "Crease Line", "",
-  };
-  for (int i = 0; i < verticalLines.length; i++) {
-    float x = verticalLines[i].x * drawingScale;
-    line(x, 0 - translationAmount, x, height - translationAmount);
-    // turn crease line label sideways 
-    pushMatrix();
-    translate(x, (height- translationAmount) / 2);
-    rotate(-HALF_PI);
-    text(verticalLineLabels[i], 0, 0);
-    popMatrix();
-  }
-  
-  //line pairs - front draft, in faded blue
-  stroke(0, 0, 255, 50);
-  PVector[] linePairs = {
-    p13, p5,
-    p14, p6a,
-    p2b, p8b,
-  };
-  for (int i = 0; i < linePairs.length; i += 2) {
-    line(linePairs[i].x * drawingScale,
-    linePairs[i].y * drawingScale,
-    linePairs[i+1].x * drawingScale,
-    linePairs[i+1].y * drawingScale);
-  }
-
-  //line pairs - back draft, in green
-  stroke(0, 255, 0);
-  PVector[] linePairsBack = {
-    p15, p11,
-    p17, p16,
-  };
-  for (int i = 0; i < linePairsBack.length; i += 2) {
-    line(linePairsBack[i].x * drawingScale,
-    linePairsBack[i].y * drawingScale,
-    linePairsBack[i+1].x * drawingScale,
-    linePairsBack[i+1].y * drawingScale);
-  }
-  
-  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back (CB)
-//  pushMatrix();
-//  translate(p16.x*drawingScale,p16.y*drawingScale);
-//  stroke(0, 255, 0);
-//  rotate(radians(90));
-//  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
-//  rotate(radians(-5));
-//  text("Center Back",0,0);
-//  popMatrix();
-
-// trying to get the perpendicular to a line from point 16 to 17 using toxiclibs  
-//  pushStyle();
-//  Vec2D from16to17 = new Vec2D(p16.x-p17.x, p16.y-p17.y);
-//  Vec2D centerBack = new Vec2D(from16to17.perpendicular());
-//  CB = new PVector (centerBack.x, centerBack.y);
-//  stroke(0);
-//  line(CB.x*drawingScale,CB.y*drawingScale, CB.x*drawingScale*2, CB.y*drawingScale*2);
-//  popStyle();
-  
-  //draw a line from p18 parallel to linePairsBack p16, p17
-  //this should extend to CB, the intersection of this and CB should be p19
-  pushMatrix();
-  translate((p18.x*drawingScale)-(p17.x*drawingScale), (p18.y*drawingScale)-(p17.y*drawingScale)); 
-  stroke(255,0, 0);
-  line(p17.x*drawingScale, p17.y*drawingScale, p16.x*drawingScale, p16.y*drawingScale);
-  
-  popMatrix();
-  
-}
 
 void grid(float drawingScale){
   // grid
@@ -272,6 +292,12 @@ void grid(float drawingScale){
   for(int x = 0; x < xsegments; x++) {
     line(x * drawingScale, 0, x * drawingScale, height);
   }
-
 }
 
+void drawBezier(PVector anchorPoint1, PVector controlPoint1, PVector controlPoint2, PVector anchorPoint2, float scale){
+    
+    bezier(scale * anchorPoint1.x, scale * anchorPoint1.y, 
+    scale * controlPoint1.x, scale * controlPoint1.y, 
+    scale * controlPoint2.x, scale * controlPoint2.y, 
+    scale * anchorPoint2.x, scale * anchorPoint2.y);
+}
