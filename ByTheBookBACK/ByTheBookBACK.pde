@@ -30,7 +30,8 @@ PVector p18, p19, p20;
 
 PVector p4a, p4b, p13out, p14out, p4Aout, p4Bout, p21;
 
-PVector pCBtop, pCBbottom;
+PVector pCBtop, pCBbottom, pParallel;
+PVector yintercept, p22;
 
 boolean drawGrid= true;
 
@@ -43,7 +44,7 @@ void setup() {
 void draw() {
   background(255);
   float translationAmount = 100 ;
-
+  
   update(); 
   float pointSize = 6;
   float drawingScale = 13;
@@ -63,7 +64,7 @@ void draw() {
     p13, p14, p2b, p2c, p8b,
     p15, p16, p17, p18, p20,
     p4a, p4b, p13out, p14out, p4Aout, p4Bout,
-    p21, pCBtop, pCBbottom,
+    p21, pCBtop, pCBbottom, p19
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", "5",
@@ -72,7 +73,7 @@ void draw() {
     "13", "14", "2b", "2c", "8b",
     "15", "16", "17", "18", "20",
     "4a", "4b", "13out","14out","4aout","4bout",
-    "21", "CBtop", "",
+    "21", "CBtop", "", "19",
   };
   for (int i = 0; i < points.length; i++){
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
@@ -134,8 +135,8 @@ void draw() {
     p15, p11,
     p17, p16,
     p11,p21,
-    p16, pCBtop,
-    p16, pCBbottom,
+    pCBtop, pCBbottom,
+    p18, p19,
   };
   for (int i = 0; i < linePairsBack.length; i += 2) {
     line(linePairsBack[i].x * drawingScale,
@@ -230,16 +231,31 @@ void update(){
   
   p21 = intersectAtDistance(p18,p4Aout,p1, p7);
   
+  // draw parallel and center back line
   float slope = (p17.y-p16.y)/(p17.x-p16.x);
+  pParallel = p12.get();
+  pParallel.y = (pParallel.x-p18.x);
+  pParallel.y *= slope;
+  pParallel.y += p18.y;
   slope = - (1/slope);
   pCBtop = p11.get();
   pCBtop.x += 1+ 3/4.; // picked 1.75" arbitrarily, CB just needs to extend above waistline
   pCBtop.y = (pCBtop.x-p16.x); 
   pCBtop.y *= slope;
   pCBtop.y += p16.y;
-  
   pCBbottom = intersectAtDistance(p2,p10,p16,pCBtop);
+  p19 = intersectAtDistance(pCBbottom,p16,p18,pParallel);
   
+  // calculate the intersection
+   // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
+  float radius;
+  radius= dist(p11.x, p11.y, p21.x, p21.y);
+  float yintercept
+  yintercept = A.get();
+  yintercept.y = p16.y - (slope*p16.x);
+  // (p22.x-p11.x) ^2 + (slope*p22.x + yintercept.y - p11.y)^2 = radius^2
+  // (p22.x-p11.x)(p22.x-p11.x) + (slope*p22.x + yintercept.y - p11.y)(slope*p22.x + yintercept.y - p11.y) = radius^2
+  //  omggg middle school math flashbacks
   
 }
 
