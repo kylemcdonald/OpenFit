@@ -1,10 +1,3 @@
-/*
-Missing:
-1 determine the perpendicular from line 16 tp 17.
-2 calculate the paralel to 16 to 17
-3 point 19
-
-*/
 import toxi.geom.*;
 import toxi.processing.*;
 
@@ -33,12 +26,13 @@ PVector p13, p14, p2b, p2c, p8b; //shape the front leg
 
 //specific to back draft
 PVector p15, p16, p17;
-PVector p18, p19, p20; //p19 = toxiclibs + transformations
+PVector p18, p19, p20;
 
 PVector p4a, p4b, p13out, p14out, p4Aout, p4Bout, p21;
 
+PVector pCBtop, pCBbottom;
 
-boolean drawGrid= false;
+boolean drawGrid= true;
 
 void setup() {
   size(400, 700);
@@ -69,7 +63,7 @@ void draw() {
     p13, p14, p2b, p2c, p8b,
     p15, p16, p17, p18, p20,
     p4a, p4b, p13out, p14out, p4Aout, p4Bout,
-    p21,
+    p21, pCBtop, pCBbottom,
   };
   String[] pointLabels = {
     "A", "B", "1", "2", "3", "4", "5",
@@ -78,7 +72,7 @@ void draw() {
     "13", "14", "2b", "2c", "8b",
     "15", "16", "17", "18", "20",
     "4a", "4b", "13out","14out","4aout","4bout",
-    "21",
+    "21", "CBtop", "",
   };
   for (int i = 0; i < points.length; i++){
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
@@ -140,6 +134,8 @@ void draw() {
     p15, p11,
     p17, p16,
     p11,p21,
+    p16, pCBtop,
+    p16, pCBbottom,
   };
   for (int i = 0; i < linePairsBack.length; i += 2) {
     line(linePairsBack[i].x * drawingScale,
@@ -148,39 +144,14 @@ void draw() {
     linePairsBack[i+1].y * drawingScale);
   }
   
-  //square a line perpendicular to linePairsBack p16, p17 & declare Center Back (CB)
-//  pushMatrix();
-//  translate(p16.x*drawingScale,p16.y*drawingScale);
-//  stroke(0, 255, 0);
-//  rotate(radians(90));
-//  line(0, 0, -(p16.x*drawingScale)-(p17.x*drawingScale), (p17.y*drawingScale)-(p16.y*drawingScale));
-//  rotate(radians(-5));
-//  text("Center Back",0,0);
-//  popMatrix();
-
-// trying to get the perpendicular to a line from point 16 to 17 using toxiclibs  
-//  pushStyle();
-//  Vec2D from16to17 = new Vec2D(p16.x-p17.x, p16.y-p17.y);
-//  Vec2D centerBack = new Vec2D(from16to17.perpendicular());
-//  CB = new PVector (centerBack.x, centerBack.y);
-//  stroke(0);
-//  line(CB.x*drawingScale,CB.y*drawingScale, CB.x*drawingScale*2, CB.y*drawingScale*2);
-//  popStyle();
-  
-  //draw a line from p18 parallel to linePairsBack p16, p17
-  //this should extend to CB, the intersection of this and CB should be p19
-  pushMatrix();
-  translate((p18.x*drawingScale)-(p17.x*drawingScale), (p18.y*drawingScale)-(p17.y*drawingScale)); 
-  stroke(255,0, 0);
-  line(p17.x*drawingScale, p17.y*drawingScale, p16.x*drawingScale, p16.y*drawingScale);
-  popMatrix();
-  
+  //outside beziers
   pushStyle();
   stroke(0,200,0);
   noFill();
   drawBezier(p21, p18, p4Aout, p13out,drawingScale);
   drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
   popStyle();
+  
 }
 
 void update(){ 
@@ -243,8 +214,7 @@ void update(){
   p18 = p16.get();
   p18.x -= (hipCircumference / 4.) + 3/8.;
   p20 = p15.get();
-  p20.x += (p15.x-p18.x); //double check, was sleepy 
-  //p19 = return actual value of p16 after translation
+  p20.x += (p15.x-p18.x); 
   
   //draw the outside lines
   p4a = intersectAtDistance(p13,p5,p4,p11);
@@ -259,6 +229,17 @@ void update(){
   p4Bout.x += 3/4.;
   
   p21 = intersectAtDistance(p18,p4Aout,p1, p7);
+  
+  float slope = (p17.y-p16.y)/(p17.x-p16.x);
+  slope = - (1/slope);
+  pCBtop = p11.get();
+  pCBtop.x += 1+ 3/4.; // picked 1.75" arbitrarily, CB just needs to extend above waistline
+  pCBtop.y = (pCBtop.x-p16.x); 
+  pCBtop.y *= slope;
+  pCBtop.y += p16.y;
+  
+  pCBbottom = intersectAtDistance(p2,p10,p16,pCBtop);
+  
   
 }
 
