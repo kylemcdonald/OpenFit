@@ -153,6 +153,14 @@ void draw() {
   drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
   popStyle();
   
+  // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
+  // only need the point, can delete the following:
+  float distancep21andp11;
+  distancep21andp11= dist(p11.x, p11.y, p21.x, p21.y);
+  ellipseMode(CENTER);
+  stroke(255,0,0, 50);
+  noFill();
+  ellipse(p11.x*drawingScale, p11.y*drawingScale, distancep21andp11*drawingScale*2,distancep21andp11*drawingScale*2);
 }
 
 void update(){ 
@@ -247,15 +255,15 @@ void update(){
   p19 = intersectAtDistance(pCBbottom,p16,p18,pParallel);
   
   // calculate the intersection
-   // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
+  // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
   float radius;
   radius= dist(p11.x, p11.y, p21.x, p21.y);
-  float yintercept
   yintercept = A.get();
   yintercept.y = p16.y - (slope*p16.x);
   // (p22.x-p11.x) ^2 + (slope*p22.x + yintercept.y - p11.y)^2 = radius^2
   // (p22.x-p11.x)(p22.x-p11.x) + (slope*p22.x + yintercept.y - p11.y)(slope*p22.x + yintercept.y - p11.y) = radius^2
-  //  omggg middle school math flashbacks
+  // need to isolate p22.x
+  // having middle school math flashbacks
   
 }
 
