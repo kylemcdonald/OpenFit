@@ -1,167 +1,84 @@
-import toxi.geom.*;
-import toxi.processing.*;
-
-// should be abstracted into a class
 // all units in inches
 // measured on lisa
-float inseam = 31; // crotch to floor (not used)
-float waist = 26; // waist circumference (not used)
-float stomachOffset = -3/8.; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach) (not in back)
-float crotchOffset = 1/4.; // anywhere from 1/4 to 3/8 (very little difference) (not in back)
 
-float sideseam = 38.4; // waist to hemline (not floor to waist)
-float hipCircumference = 35; // the "fullest part of your hip" 
-float crotchDepth = 8; // from waist to seat when you're sitting
-float hemCircumference = 12; // also called "ankle", based on your favorite pants
-
-float derriereShape = 2; // normal/average derriere: 1+5/8, flat derriere: 2, protruding derriere: 7/8
-
-PFont font;
-
-//also in front draft
-PVector A, B, p1, p2, p3, p4, p5; // mark points
-PVector p6, p6a, p7, p8; //add circumference
-PVector p9, p10, p11, p12; //establish the crease
-PVector p13, p14, p2b, p2c, p8b; //shape the front leg
-
-//specific to back draft
-PVector p15, p16, p17;
-PVector p18, p19, p20;
-
-PVector p4a, p4b, p13out, p14out, p4Aout, p4Bout, p21;
-
-PVector pCBtop, pCBbottom, pParallel;
-PVector yintercept, p22;
-
-boolean drawGrid= true;
-
-void setup() {
-  size(400, 700);
-  font = createFont("Arial", 12);
-  textFont(font);  
-}
-
-void draw() {
-  background(255);
-  float translationAmount = 100 ;
+class PantBack {
   
-  update(); 
-  float pointSize = 6;
-  float drawingScale = 13;
-  drawingScale = map(mouseX, 0, width, 5, 50);
+  float inseam; // crotch to floor 
+  float sideseam; // waist to hemline (not floor to waist)
+  float hipCircumference; // the "fullest part of your hip" 
+  float crotchDepth; // from waist to seat when you're sitting
+  float hemCircumference; // also called "ankle", based on your favorite pants
+  float waist; // waist circumference
+  float derriereShape; // normal/average derriere: 1+5/8, flat derriere: 2, protruding derriere: 7/8
+  float takeInCenterBack; //usually 1/4" to 3/8"
+  float dartDepth; //how deep you want the darts at the waist, perhaps 2"
 
-  if(drawGrid) grid(drawingScale);
-  translate(translationAmount,translationAmount); // put translation somewhere else? 
+  //also in front draft
+  private PVector A, B, p1, p2, p3, p4, p5; // mark points
+  private PVector p6, p6a, p7, p8; //add circumference
+  private PVector p9, p10, p11, p12; //establish the crease
+  private PVector p13, p14, p2b, p2c, p8b; //shape the front leg
+  
+  // other PVectors in David's code ... why???
+  // private PVector p7a, p6b;
+  // private PVector D, Aa, p5a;
 
-  //points
-  noStroke();
-  fill(0);
-  textAlign(LEFT, CENTER);
-  PVector[] points = {
-    A, B, p1, p2, p3, p4, p5,
-    p6, p6a, p7, p8,
-    p9, p10, p11, p12,
-    p13, p14, p2b, p2c, p8b,
-    p15, p16, p17, p18, p20,
-    p4a, p4b, p13out, p14out, p4Aout, p4Bout,
-    p21, pCBtop, pCBbottom, p19
-  };
-  String[] pointLabels = {
-    "A", "B", "1", "2", "3", "4", "5",
-    "6", "6a", "7", "8",
-    "9", "10", "11", "12",
-    "13", "14", "2b", "2c", "8b",
-    "15", "16", "17", "18", "20",
-    "4a", "4b", "13out","14out","4aout","4bout",
-    "21", "CBtop", "", "19",
-  };
-  for (int i = 0; i < points.length; i++){
-    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
-    ellipse(x, y, pointSize, pointSize); 
-    text(pointLabels[i], x + pointSize, y); 
+  //specific to back draft
+  PVector p15, p16, p17;
+  PVector p18, p19, p20;
+
+  PVector p4a, p4b, p13out, p14out, p4Aout, p4Bout, p21;
+
+  PVector pCBtop, pCBbottom, pParallel;
+  PVector p22, p23, p24, p25, p21ControlPoint;
+
+  private float drawingScale = 20;
+  PFont font;
+  
+  boolean showPoints, showHorizontalLines, showVerticalLines, drawPant;
+
+  PantBack() {
+    inseam = 31;
+    sideseam = 38.4; 
+    hipCircumference = 35; 
+    crotchDepth = 8; 
+    hemCircumference = 12; 
+    waist = 26; 
+    derriereShape = 2;
+    takeInCenterBack = 3/8.; 
+    dartDepth = 2;
+    
+    showPoints = showHorizontalLines = showVerticalLines = drawPant = true;
+    
+    font = createFont("Arial", 12);
+    textFont(font);
   }
   
-  //horizontal lines
-  stroke(200);
-  textAlign(RIGHT, BOTTOM);
-  PVector[] horizontalLines = {
-  p1, p2, p4, p5, B,
-  };
-  String[] horizontalLineLabels = {
-  "Waist", "Crotch Depth", "Knee", "Hipline", "Hemline", 
-  };
-  for (int i = 0; i < horizontalLines.length; i++) {
-    float y = horizontalLines[i].y * drawingScale;
-    line(0- translationAmount, y, width- translationAmount, y);
-    text(horizontalLineLabels[i], (width- translationAmount), y);
-  }
-  
-  //vertical lines
-  stroke(200);
-  PVector[] verticalLines = {
-    p6, p9, p1
-  };
-  String[] verticalLineLabels = {
-    "", "Crease Line", "",
-  };
-  for (int i = 0; i < verticalLines.length; i++) {
-    float x = verticalLines[i].x * drawingScale;
-    line(x, 0 - translationAmount, x, height - translationAmount);
-    // turn crease line label sideways 
-    pushMatrix();
-    translate(x, (height- translationAmount) / 2);
-    rotate(-HALF_PI);
-    text(verticalLineLabels[i], 0, 0);
-    popMatrix();
-  }
-  
-  //line pairs - front draft, in faded blue
-  stroke(0, 0, 255, 50);
-  PVector[] linePairs = {
-    p13, p5,
-    p14, p6a,
-    p2b, p8b,
-  };
-  for (int i = 0; i < linePairs.length; i += 2) {
-    line(linePairs[i].x * drawingScale,
-    linePairs[i].y * drawingScale,
-    linePairs[i+1].x * drawingScale,
-    linePairs[i+1].y * drawingScale);
-  }
+  PantBack (
+    float _inseam,
+    float _sideseam, 
+    float _hipCircumference, 
+    float _crotchDepth,
+    float _hemCircumference, 
+    float _waist,
+    float _derriereShape,
+    float _takeInCenterBack,
+    float _dartDepth) {
+    inseam = _inseam;
+    sideseam = _sideseam; 
+    hipCircumference = _hipCircumference; 
+    crotchDepth = _crotchDepth; 
+    hemCircumference = _hemCircumference; 
+    waist = _waist; 
+    derriereShape = _derriereShape;
+    takeInCenterBack = -takeInCenterBack; 
+    dartDepth = _dartDepth;  
+    
+    showPoints = showHorizontalLines = showVerticalLines = drawPant = true;
 
-  //line pairs - back draft, in green
-  stroke(0, 255, 0);
-  PVector[] linePairsBack = {
-    p15, p11,
-    p17, p16,
-    p11,p21,
-    pCBtop, pCBbottom,
-    p18, p19,
-  };
-  for (int i = 0; i < linePairsBack.length; i += 2) {
-    line(linePairsBack[i].x * drawingScale,
-    linePairsBack[i].y * drawingScale,
-    linePairsBack[i+1].x * drawingScale,
-    linePairsBack[i+1].y * drawingScale);
+    font = createFont("Arial", 12);
+    textFont(font);
   }
-  
-  //outside beziers
-  pushStyle();
-  stroke(0,200,0);
-  noFill();
-  drawBezier(p21, p18, p4Aout, p13out,drawingScale);
-  drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
-  popStyle();
-  
-  // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
-  // only need the point, can delete the following:
-  float distancep21andp11;
-  distancep21andp11= dist(p11.x, p11.y, p21.x, p21.y);
-  ellipseMode(CENTER);
-  stroke(255,0,0, 50);
-  noFill();
-  ellipse(p11.x*drawingScale, p11.y*drawingScale, distancep21andp11*drawingScale*2,distancep21andp11*drawingScale*2);
-}
 
 void update(){ 
   // mark points
@@ -254,55 +171,206 @@ void update(){
   pCBbottom = intersectAtDistance(p2,p10,p16,pCBtop);
   p19 = intersectAtDistance(pCBbottom,p16,p18,pParallel);
   
-  // calculate the intersection
-  // p22 is the intersection of a circle created by the dist between p11 and p21 and CB
-  float radius;
-  radius= dist(p11.x, p11.y, p21.x, p21.y);
-  yintercept = A.get();
-  yintercept.y = p16.y - (slope*p16.x);
-  // (p22.x-p11.x) ^2 + (slope*p22.x + yintercept.y - p11.y)^2 = radius^2
-  // (p22.x-p11.x)(p22.x-p11.x) + (slope*p22.x + yintercept.y - p11.y)(slope*p22.x + yintercept.y - p11.y) = radius^2
-  // need to isolate p22.x
-  // having middle school math flashbacks
+  //first, find yintercept of centerback line, can use slope of CB line defined previously?
+  // redefine slope just in case
+  //slope = (pCBtop.y - p19.y)/(pCBtop.x - p19.x);
+  float yintercept = pCBtop.y - (slope*pCBtop.x);
+  float radius = dist(p11.x, p11.y, p21.x, p21.y);
+  p22 = A.get();
+  p22.x = - sqrt( 
+      - sq(yintercept) - (2.*yintercept*p11.x*slope) + (2.*yintercept*p11.y) - (sq(p11.x)*sq(slope)) + 
+      (2.*p11.x*p11.y*slope) - sq(p11.y) + (sq(slope)*sq(radius)) + sq(radius)
+      ) 
+      - (yintercept* slope) + p11.x + (p11.y* slope);
+  p22.x /= sq(slope) + 1.; 
+  p22.y = slope* p22.x + yintercept;
   
-}
-
-// calculate location of p2b using toxiclibs
-PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
-  float maxScale = 10; // line has to be within this normalized distance
-  Line2D ab = makeLine(a, b);
-  Line2D cd = makeLine(c, d);
-  ab.offsetAndGrowBy(0, maxScale, ab.getMidPoint());
-  cd.offsetAndGrowBy(0, maxScale, cd.getMidPoint());
-  Line2D.LineIntersection isec = ab.intersectLine(cd);
-  Vec2D pos = isec.getPos();
-  return new PVector(pos.x, pos.y);
-}
+  p23 = p2b.get();
+  p23.y += 1/4.;
+  float slopep20 = (p20.y-p4Bout.y)/(p20.x-p4Bout.x);
+  float yinterceptp20 = p20.y - (slopep20 * p20.x);
+  p23.x = (p23.y - yinterceptp20) / slopep20;  
   
-Line2D makeLine(PVector a, PVector b) {
-  Vec2D va = new Vec2D(a.x, a.y);
-  Vec2D vb = new Vec2D(b.x, b.y);
-  return new Line2D(va, vb);
-}
+  //i know all this math should be abstracted but not exactly sure how yet
+  float slopetop = (p22.y-p21.y)/(p22.x-p21.x);
+  float yintercepttop = p22.y - (slopetop * p22.x);
+  p24 = p22.get();
+  p24.x = - sqrt(
+      - sq(yintercepttop) - (2.*yintercepttop*p22.x*slopetop) + (2.*yintercepttop*p22.y) + 
+      (sq(takeInCenterBack)*sq(slopetop)) + sq(takeInCenterBack) - (sq(p22.x)*sq(slopetop)) +
+      (2.*p22.x*p22.y*slopetop) - sq(p22.y)
+      ) - (yintercepttop*slopetop) + p22.x + (p22.y*slopetop);
+  p24.x /= sq(slopetop) +1.;
+  p24.y = (p24.x*slopetop) + yintercepttop;
+  
+  float waistdistance = (waist / 4.) - 1/4. + dartDepth; //desired dart depth?? first time using waist?
+  p25 = p24.get();
+  p25.x = - sqrt(
+      - sq(yintercepttop) - (2.*yintercepttop*p24.x*slopetop) + (2.*yintercepttop*p24.y) + 
+      (sq(waistdistance)*sq(slopetop)) + sq(waistdistance) - (sq(p24.x)*sq(slopetop)) +
+      (2.*p24.x*p24.y*slopetop) - sq(p24.y)
+      ) - (yintercepttop*slopetop) + p24.x + (p24.y*slopetop);
+  p25.x /= sq(slopetop) +1.;
+  p25.y = (p25.x*slopetop) + yintercepttop;
+  
+  float slopeside = (p21.y-p18.y)/(p21.x-p18.x);
+  float yinterceptside = p21.y - (slopeside * p21.x);
+  p21ControlPoint = p21.get();
+  p21ControlPoint.x = sqrt(
+      - sq(yinterceptside) - (2.*yinterceptside*p21.x*slopeside) + (2.*yinterceptside*p21.y) + 
+      (sq(dartDepth)*sq(slopeside)) + sq(dartDepth) - (sq(p21.x)*sq(slopeside)) +
+      (2.*p21.x*p21.y*slopeside) - sq(p21.y)
+      ) - (yinterceptside*slopeside) + p21.x + (p21.y*slopeside);
+  p21ControlPoint.x /= sq(slopeside) +1.;
+  p21ControlPoint.y = (p21ControlPoint.x*slopeside) + yinterceptside; 
+} 
 
+  void draw() {
 
-void grid(float drawingScale){
-  // grid
-  stroke(150,150,150,30);
-  int xsegments = int(width / drawingScale);
-  int ysegments = int(height / drawingScale);
-  for(int y = 0; y < ysegments; y++) {
-    line(0, y * drawingScale, width, y * drawingScale);
+    float pointSize = 6;
+
+    // horizontal lines
+    if (showHorizontalLines) drawHorizontalLines();
+
+    // vertical lines
+    if (showVerticalLines) drawVerticalLines();
+
+    //draw the outile of the pant
+    if (drawPant)  drawPant(drawingScale);
+
+    // points
+    if (showPoints) drawPoints(pointSize);
   }
-  for(int x = 0; x < xsegments; x++) {
-    line(x * drawingScale, 0, x * drawingScale, height);
+  
+  void drawPoints(float pointSize) {
+    noStroke();
+    fill(0);
+    textAlign(LEFT, CENTER);
+    PVector[] points = {
+      A, B, p1, p2, p3, p4, p5,
+      p6, p6a, p7, p8,
+      p9, p10, p11, p12,
+      p13, p14, p2b, p2c, p8b,
+      p15, p16, p17, p18, p20,
+      p4a, p4b, p13out, p14out, p4Aout, p4Bout,
+      p21, pCBtop, pCBbottom, p19
+    };
+    String[] pointLabels = {
+      "A", "B", "1", "2", "3", "4", "5",
+      "6", "6a", "7", "8",
+      "9", "10", "11", "12",
+      "13", "14", "2b", "2c", "8b",
+      "15", "16", "17", "18", "20",
+      "4a", "4b", "13out","14out","4aout","4bout",
+      "21", "CBtop", "", "19",
+    };
+    for (int i = 0; i < points.length; i++){
+      float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+      ellipse(x, y, pointSize, pointSize); 
+      text(pointLabels[i], x + pointSize, y); 
+    }
   }
-}
 
-void drawBezier(PVector anchorPoint1, PVector controlPoint1, PVector controlPoint2, PVector anchorPoint2, float scale){
+  
+  void drawHorizontalLines() {
+    stroke(200);
+    textAlign(RIGHT, BOTTOM);
+    PVector[] horizontalLines = {
+    p1, p2, p4, p5, B,
+    };
+    String[] horizontalLineLabels = {
+    "Waist", "Crotch Depth", "Knee", "Hipline", "Hemline", 
+    };
+    for (int i = 0; i < horizontalLines.length; i++) {
+      float y = horizontalLines[i].y * drawingScale;
+      line(0, y, width, y);
+      text(horizontalLineLabels[i], width, y);
+    }
+  }
+  
+  void drawVerticalLines() {
+    stroke(200);
+    PVector[] verticalLines = {
+      p6, p9, p1
+    };
+    String[] verticalLineLabels = {
+      "", "Crease Line", "",
+    };
+    for (int i = 0; i < verticalLines.length; i++) {
+      float x = verticalLines[i].x * drawingScale;
+      line(x, 0, x, height);
+      // turn crease line label sideways 
+      pushMatrix();
+      translate(x, height / 2);
+      rotate(-HALF_PI);
+      text(verticalLineLabels[i], 0, 0);
+      popMatrix();
+    }
+  }
+  
+  void drawPant(float drawingScale) {
+    //line pairs - front draft, in faded blue
+    stroke(0, 0, 255, 50);
+    PVector[] linePairs = {
+      p13, p5,
+      p14, p6a,
+      p2b, p8b,
+    };
+    for (int i = 0; i < linePairs.length; i += 2) {
+      line(linePairs[i].x * drawingScale,
+      linePairs[i].y * drawingScale,
+      linePairs[i+1].x * drawingScale,
+      linePairs[i+1].y * drawingScale);
+    }
+
+    //line pairs - back draft, in green
+    stroke(0, 255, 0);
+    PVector[] linePairsBack = {
+      p15, p11,
+      p17, p16,
+      p11,p21,
+      pCBtop, pCBbottom,
+      p18, p19,
+    };
+    for (int i = 0; i < linePairsBack.length; i += 2) {
+      line(linePairsBack[i].x * drawingScale,
+      linePairsBack[i].y * drawingScale,
+      linePairsBack[i+1].x * drawingScale,
+      linePairsBack[i+1].y * drawingScale);
+    }
+  
+    //outside beziers
+    pushStyle();
+    stroke(0,200,0);
+    noFill();
+    drawBezier(p21, p18, p4Aout, p13out,drawingScale);
+    drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
+    popStyle();
+  }
+  
+  // calculate location of p2b using toxiclibs
+  PVector intersectAtDistance(PVector a, PVector b, PVector c, PVector d) {
+    float maxScale = 10; // line has to be within this normalized distance
+    Line2D ab = makeLine(a, b);
+    Line2D cd = makeLine(c, d);
+    ab.offsetAndGrowBy(0, maxScale, ab.getMidPoint());
+    cd.offsetAndGrowBy(0, maxScale, cd.getMidPoint());
+    Line2D.LineIntersection isec = ab.intersectLine(cd);
+    Vec2D pos = isec.getPos();
+    return new PVector(pos.x, pos.y);
+  }
+  
+  Line2D makeLine(PVector a, PVector b) {
+    Vec2D va = new Vec2D(a.x, a.y);
+    Vec2D vb = new Vec2D(b.x, b.y);
+    return new Line2D(va, vb);
+  }
+
+  void drawBezier(PVector anchorPoint1, PVector controlPoint1, PVector controlPoint2, PVector anchorPoint2, float scale){
     
     bezier(scale * anchorPoint1.x, scale * anchorPoint1.y, 
     scale * controlPoint1.x, scale * controlPoint1.y, 
     scale * controlPoint2.x, scale * controlPoint2.y, 
     scale * anchorPoint2.x, scale * anchorPoint2.y);
+  }
 }
