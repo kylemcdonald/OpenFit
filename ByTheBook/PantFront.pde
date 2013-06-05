@@ -12,7 +12,7 @@ class PantFront {
   float stomachOffset; // anywhere from -3/8 (flat stomach) to +5/8 (protruding stomach)
   float crotchOffset; // anywhere from 1/4 to 3/8 (very little difference)
 
-  private float drawingScale = 20;
+  private float drawingScale = 13;
 
   private PVector A, B, p1, p2, p3, p4, p5;
   private PVector p6, p7, p8, p6a;
@@ -191,8 +191,8 @@ class PantFront {
     stroke(0, 0, 200);
     PVector[] linePairs = {
       p13, p5, 
-      p14, p6a, 
-      p8b, p2b
+      p14, p2b, 
+      p13, p14,
     };
     for (int i = 0; i < linePairs.length; i += 2) {
       line(drawingScale * linePairs[i].x, drawingScale * linePairs[i].y, 
@@ -252,8 +252,8 @@ class PantFront {
     };
     for (int i = 0; i < horizontalLines.length; i++) {
       float y = horizontalLines[i].y * drawingScale;
-      line(0, y, width/2, y);
-      text(horizontalLineLabels[i], width/2, y);
+      line(0, y, width- width/8, y);
+      text(horizontalLineLabels[i], width- width/8, y);
     }
   }
 

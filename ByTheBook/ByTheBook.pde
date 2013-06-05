@@ -4,7 +4,7 @@ import processing.pdf.*;
 import controlP5.*;
 
 static int WSCREEN = 700;
-static int HSCREEN = 800;
+static int HSCREEN = 600;
 
 /* variables */
 //display grid
@@ -35,10 +35,11 @@ void draw() {
   if (showGrid) drawGrid();
 
   pantFront.update();
+  translate(width/16, height/16);
   pantFront.draw();
 
   pantBack.update();
-  translate(width/2, 0);
+  translate((width/2) - (width/16), 0);
   pantBack.draw();
   if (savePdf) {
     savePdf=false; 

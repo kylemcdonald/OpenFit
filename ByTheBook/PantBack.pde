@@ -32,10 +32,10 @@ class PantBack {
   PVector pCBtop, pCBbottom, pParallel;
   PVector p22, p23, p24, p25, p21ControlPoint;
 
-  private float drawingScale = 20;
+  private float drawingScale = 13;
   PFont font;
   
-  boolean showPoints, showHorizontalLines, showVerticalLines, drawPant;
+  boolean showPoints, showVerticalLines, drawPant, drawDraftingLines;
 
   PantBack() {
     inseam = 31;
@@ -48,7 +48,7 @@ class PantBack {
     takeInCenterBack = 3/8.; 
     dartDepth = 2;
     
-    showPoints = showHorizontalLines = showVerticalLines = drawPant = true;
+    showPoints = showVerticalLines = drawPant = drawDraftingLines = true;
     
     font = createFont("Arial", 12);
     textFont(font);
@@ -74,7 +74,7 @@ class PantBack {
     takeInCenterBack = -takeInCenterBack; 
     dartDepth = _dartDepth;  
     
-    showPoints = showHorizontalLines = showVerticalLines = drawPant = true;
+    showPoints = showVerticalLines = drawPant = drawDraftingLines = true;
 
     font = createFont("Arial", 12);
     textFont(font);
@@ -230,13 +230,16 @@ void update(){
     float pointSize = 6;
 
     // horizontal lines
-    if (showHorizontalLines) drawHorizontalLines();
+    //if (showHorizontalLines) drawHorizontalLines();
 
     // vertical lines
     if (showVerticalLines) drawVerticalLines();
 
     //draw the outile of the pant
     if (drawPant)  drawPant(drawingScale);
+    
+    //draw drafting lines
+    if (drawDraftingLines) drawDraftingLines(drawingScale);
 
     // points
     if (showPoints) drawPoints(pointSize);
@@ -253,7 +256,7 @@ void update(){
       p13, p14, p2b, p2c, p8b,
       p15, p16, p17, p18, p20,
       p4a, p4b, p13out, p14out, p4Aout, p4Bout,
-      p21, pCBtop, pCBbottom, p19
+      p21, pCBtop, pCBbottom, p19, p22, p23, p24, p25,
     };
     String[] pointLabels = {
       "A", "B", "1", "2", "3", "4", "5",
@@ -262,29 +265,12 @@ void update(){
       "13", "14", "2b", "2c", "8b",
       "15", "16", "17", "18", "20",
       "4a", "4b", "13out","14out","4aout","4bout",
-      "21", "CBtop", "", "19",
+      "21", "CBtop", "", "19", "22", "23", "24", "25",
     };
     for (int i = 0; i < points.length; i++){
       float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
       ellipse(x, y, pointSize, pointSize); 
       text(pointLabels[i], x + pointSize, y); 
-    }
-  }
-
-  
-  void drawHorizontalLines() {
-    stroke(200);
-    textAlign(RIGHT, BOTTOM);
-    PVector[] horizontalLines = {
-    p1, p2, p4, p5, B,
-    };
-    String[] horizontalLineLabels = {
-    "Waist", "Crotch Depth", "Knee", "Hipline", "Hemline", 
-    };
-    for (int i = 0; i < horizontalLines.length; i++) {
-      float y = horizontalLines[i].y * drawingScale;
-      line(0, y, width, y);
-      text(horizontalLineLabels[i], width, y);
     }
   }
   
@@ -309,28 +295,13 @@ void update(){
   }
   
   void drawPant(float drawingScale) {
-    //line pairs - front draft, in faded blue
-    stroke(0, 0, 255, 50);
-    PVector[] linePairs = {
-      p13, p5,
-      p14, p6a,
-      p2b, p8b,
-    };
-    for (int i = 0; i < linePairs.length; i += 2) {
-      line(linePairs[i].x * drawingScale,
-      linePairs[i].y * drawingScale,
-      linePairs[i+1].x * drawingScale,
-      linePairs[i+1].y * drawingScale);
-    }
 
-    //line pairs - back draft, in green
-    stroke(0, 255, 0);
+    //line pairs back draft
+    stroke(0,0,200);
     PVector[] linePairsBack = {
-      p15, p11,
-      p17, p16,
-      p11,p21,
-      pCBtop, pCBbottom,
-      p18, p19,
+      p13out, p14out,
+      p19, p24, 
+      p24, p25
     };
     for (int i = 0; i < linePairsBack.length; i += 2) {
       line(linePairsBack[i].x * drawingScale,
@@ -341,11 +312,38 @@ void update(){
   
     //outside beziers
     pushStyle();
-    stroke(0,200,0);
+    stroke(0,0,200);
     noFill();
-    drawBezier(p21, p18, p4Aout, p13out,drawingScale);
-    drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale);  
+    drawBezier(p18, p4Aout, p4Aout, p13out,drawingScale);
+    //all the way up to p20, dont need:
+    //drawBezier(p14out,p4Bout,p4Bout,p20,drawingScale); 
+    drawBezier(p14out,p4Bout,p4Bout,p23,drawingScale); 
+    drawBezier(p19,p16,p2b,p23,drawingScale); 
+    drawBezier(p25,p21ControlPoint,p21ControlPoint,p18,drawingScale);  
     popStyle();
+  }
+  
+  void drawDraftingLines(float drawingScale) {
+  //line pairs, in faded blue
+    stroke(0, 0, 200, 50);
+    PVector[] linePairs = {
+      p13, p5,
+      p14, p6a,
+      p15, p11,
+      p17, p16,
+      p11,p21,
+      p2b, p8b,
+      pCBtop, pCBbottom,
+      p18, p19,
+      
+    };
+    for (int i = 0; i < linePairs.length; i += 2) {
+      line(linePairs[i].x * drawingScale,
+      linePairs[i].y * drawingScale,
+      linePairs[i+1].x * drawingScale,
+      linePairs[i+1].y * drawingScale);
+    }
+  
   }
   
   // calculate location of p2b using toxiclibs
