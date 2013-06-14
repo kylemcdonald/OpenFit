@@ -8,14 +8,24 @@ void triangle(PVector a, PVector b, PVector c) {
   line(c, a);
 }
 
+float getAngle(float a, float b, float c) {
+  return acos((a * a + b * b - c * c) / (2 * a * b));
+}
+
 class Edge {
   Surface a, b;
-  Edge(Surface a, Surface b) {
+  PVector start, end;
+  Edge(Surface a, Surface b, PVector start, PVector end) {
     this.a = a;
     this.b = b;
+    this.start = start;
+    this.end = end;
   }
   void draw() {
     line(a.getCenter(), b.getCenter());
+  }
+  void drawSharedEdge() {
+    line(start, end);
   }
 }
 
@@ -29,14 +39,40 @@ class Surface {
   void draw() {
     triangle(a, b, c);
   }
+  PVector getCorner(int corner) {
+    if(corner == 0) {
+      return a;
+    } else if(corner == 1) {
+      return b;
+    } else {
+      return c;
+    }
+  }
+  PVector getFlatCorner(int corner) {
+    if(corner == 0) {
+      return new PVector(0, 0);
+    }
+    float r1 = a.dist(b);
+    if(corner == 2) {
+      float r2 = b.dist(c), r3 = c.dist(a), angle = getAngle(r1, r2, r3);
+      PVector cur = new PVector(r2, 0);
+      cur.rotate(angle);
+      return cur;
+    }
+    return new PVector(r1, 0);
+  }
   void drawFlat() {
-    float r1 = a.dist(b), r2 = a.dist(c), r3 = c.dist(a);
-    // the first two points are (0, 0) and (r1, 0)
-    line(0, 0, r1, 0);
-    // the third point is at the intersection of these two circles
-    // which can be solved from the fact that we know all the sides
-    ellipse(0, 0, r2 * 2, r2 * 2);
-    ellipse(r1, 0, r3 * 2, r3 * 2);
+    triangle(
+      getFlatCorner(0),
+      getFlatCorner(1),
+      getFlatCorner(2));
+  }
+  void transformToFlatEdge(int edge) {
+    PVector a = getFlatCorner(edge);
+    PVector b = getFlatCorner((edge + 1) % 3);
+    float angle = atan2(b.y - a.y, b.x - a.x);
+    translate(a.x, a.y);
+    rotate(angle);
   }
   PVector getCenter() {
     return new PVector(
