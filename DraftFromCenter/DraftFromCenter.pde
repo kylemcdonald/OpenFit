@@ -58,6 +58,10 @@ PVector p1, p2, p3, p3a, p4, p5, p6, p7, p8, p9, p9a, p10, p11, p12; //pant poin
 PVector p13, p14, p15, p15a, p16, p17, p18, p19, p20, p21, p21a, p22, p23, p24; // pant points back
 PVector p5a, p6a, c5, c6, p4a, p4b, p6b; // front pocket, currently only half size
 PVector p17a, p19a; // yoke
+PVector l1, h1, l2, h2, l3, h3, l3a, h3a, l4, h4, l5, h5, l6, h6, l7, h7, csa1, csa2, h9, l9, h9a, l9a, h10, l10, h11, l11, h12, l12; // front SA drafting
+PVector sa1, sa2, sa3, sa3a, sa4, sa5, sa6, sa7, sa9, sa9a, sa10, sa11, sa12; // front SA
+PVector l13, h13, l14, h14, l15, h15, l15a, h15a, l16, h16, l17, h17, l18, h18, l19, h19, csa3, csa4, h21, l21, h21a, l21a, h22, l22, h23, l23, h24, l24; // back SA drafting
+PVector sa13, sa14, sa15, sa15a, sa16, sa17, sa18, sa19, sa20, sa21, sa21a, sa22, sa23, sa24; // back SA
 
 float drawingScale = 13;
 float pointSize = 6;
@@ -76,6 +80,8 @@ float pocketWidth = 3;
 boolean yoke = false;
 float yokeInside = 2;
 float yokeOutside = 1.25;
+
+float seamAllowance = 3/8.;
 
 void setup() {
   size(900, 700);
@@ -161,6 +167,12 @@ void measurementGui() {
   cp5.addToggle("skinnyKnees").setPosition(z, y+=spacing).setSize(20, 20);
   cp5.addToggle("pocket").setPosition(z, y+=spacing).setSize(20, 20);
   cp5.addToggle("yoke").setPosition(z, y+=spacing).setSize(20, 20);
+
+  int w = x - 100;
+  y = 10;
+
+  cp5.addNumberbox("seamAllowance").setPosition(w, y).setRange(0, 2)
+    .setValue(seamAllowance).setMultiplier(0.125);
 }
 
 float crotchLengthBack, hipBack, buttBack, thighBack, midthighBack, kneeBack, calfBack, ankleBack;
@@ -182,6 +194,8 @@ void draw() {
   bodyPointsB();
   pantPointsF();
   pantPointsB();
+  pantPointsSAF();
+  pantPointsSAB();
 
   // draw drafting points
   pushMatrix();
@@ -193,18 +207,22 @@ void draw() {
   pushMatrix();
   translate (200, 150);
   //drawBodyPointsF();
-  drawPantPointsF();
-  //bodyShapeF();
+  //drawPantPointsF();
+  //drawPantPointsSAF();
+  bodyShapeF();
   pantShapeF();
+  pantShapeSAF();
   popMatrix();
 
   //pant back
   pushMatrix();
   translate (400, 150);
   //drawBodyPointsB();
-  drawPantPointsB();
-  //bodyShapeB();
+  //drawPantPointsB();
+  //drawPantPointsSAB();
+  bodyShapeB();
   pantShapeB();
+  pantShapeSAB();
   popMatrix();
 
   if (yoke == true) {
@@ -382,7 +400,66 @@ void pantShapeB() {
   endShape(CLOSE);
 }
 
+void pantShapeSAF() {
+  stroke(0, 0, 255);
+  noFill();
+  beginShape();
+  vertexScale(sa1);
+  if (skinnyKnees == true) {
+    bezierVertexScale(sa2, sa2, sa3);
+    bezierVertexScale(sa3a, sa4, sa5);
+  } else {
+    bezierVertexScale(sa2, sa3a, sa5);
+  }
+  //if (pocket == true) {
+  //vertexScale(p5a);
+  //bezierVertexScale(c5, c6, p6a);
+  //vertexScale(p7);
+  //} else {
+  vertexScale(sa6);
+  vertexScale(sa7);
+  //}
+  bezierVertexScale(csa1, csa2, sa9);
+  if (skinnyKnees == true) {
+    bezierVertexScale(sa9a, sa9a, sa10);
+    bezierVertexScale(sa11, sa11, sa12);
+  } else {
+    bezierVertexScale(sa9a, sa10, sa12);
+  }
+  endShape(CLOSE);
+}
+
+void pantShapeSAB() {
+  stroke(0, 0, 255);
+  noFill();
+  beginShape();
+  vertexScale(sa13);
+  if (skinnyKnees == true) {
+    bezierVertexScale(sa14, sa14, sa15);
+    bezierVertexScale(sa15a, sa16, sa17);
+  } else {
+    bezierVertexScale(sa14, sa15a, sa17);
+  }
+  //if (yoke == true) {
+    //vertexScale(17a);
+    //vertexScale(p19a);
+  //} else {
+    vertexScale(sa18);
+    vertexScale(sa19);
+  //}
+  bezierVertexScale(csa3, csa4, sa21);
+  if (skinnyKnees == true) {
+    bezierVertexScale(sa21a, sa21a, sa22);
+    bezierVertexScale(sa23, sa23, sa24);
+  } else {
+    bezierVertexScale(sa21a, sa22, sa24);
+  }
+  endShape(CLOSE);
+}
+
 void yokeShape() {
+  stroke(0);
+  noFill();
   beginShape();
   vertexScale(p18);
   vertexScale(p19);
@@ -392,6 +469,8 @@ void yokeShape() {
 }
 
 void pocketShape() {
+  stroke(0);
+  noFill();
   beginShape();
   vertexScale(p6);
   vertexScale(p6b);
@@ -510,6 +589,46 @@ void drawPantPointsB() {
     "p13", "p14", "p15", "p15a", "p16", "p17", "p18", "p19", "p20", 
     "p21", "p21a", "p22", "p23", "p24", 
     "p17a", "p19a",
+  };
+  for (int i = 0; i < points.length; i++) {
+    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+    ellipse(x, y, pointSize, pointSize); 
+    text(pointLabels[i], x + pointSize, y);
+  }
+}
+
+void drawPantPointsSAF() {
+  noStroke();
+  fill(0);
+  textAlign(LEFT, CENTER);
+  PVector[] points = {
+    //l1, h1, l2, h2, l3, h3, l3a, h3a, l4, h4, l5, h5, l6, h6, l7, h7, h9, l9, h9a, l9a, h10, l10, h11, l11, h12, l12, 
+    sa1, sa2, sa3, sa3a, sa4, sa5, sa6, sa7, sa9, sa9a, sa10, sa11, sa12, csa1, csa2,
+  };
+  String[] pointLabels = {
+    //"l1", "h1", "l2", "h2", "l3", "h3", "l3a", "h3a", "l4", "h4", "l5", "h5", "l6", "h6", 
+    //"l7", "h7", "h9", "l9", "h9a", "l9a", "h10", "l10", "h11", "l11", "h12", "l12", 
+    "sa1", "sa2", "sa3", "sa3a", "sa4", "sa5", "sa6", "sa7", "sa9", "sa9a", "sa10", "sa11", "sa12", "csa1", "csa2",
+  };
+  for (int i = 0; i < points.length; i++) {
+    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+    ellipse(x, y, pointSize, pointSize); 
+    text(pointLabels[i], x + pointSize, y);
+  }
+}
+
+void drawPantPointsSAB() {
+  noStroke();
+  fill(0);
+  textAlign(LEFT, CENTER);
+  PVector[] points = {
+    //l13, h13, l14, h14, l15, h15, l15a, h15a, l16, h16, l17, h17, l18, h18, l19, h19, h21, l21, h21a, l21a, h22, l22, h23, l23, h24, l24, 
+    csa3, csa4, sa13, sa14, sa15, sa15a, sa16, sa17, sa18, sa19, sa21, sa21a, sa22, sa23, sa24,
+  };
+  String[] pointLabels = {
+    //"l13", "h13", "l14", "h14", "l15", "h15", "l15a", "h15a", "l16", "h16", "l17", "h17", "l18", "h18", 
+    //"l19", "h19", "h21", "l21", "h21a", "l21a", "h22", "l22", "h23", "l23", "h24", "l24", 
+    "csa3", "csa4", "sa13", "sa14", "sa15", "sa15a", "sa16", "sa17", "sa18", "sa19", "sa21", "sa21a", "sa22", "sa23", "sa24",
   };
   for (int i = 0; i < points.length; i++) {
     float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
@@ -733,7 +852,7 @@ void pantPointsF() {
   p5a= pointOnLine(p5, p6, pocketHeight, true);
   p6a= pointOnLine(p7, p6, pocketWidth, false);
   p6b= pointOnLine(p7, p6, pocketWidth*1.7, false);
-  p4a= pointOnLine(p3a, p5, 4., false);
+  p4a= pointOnLine(p3a, p5, 4., false); // why does this break? 
   p4b = p4a.get();
   p4b.x += pocketWidth*1.7;
 }
@@ -763,6 +882,101 @@ void pantPointsB() {
   p19a =pointOnLine(p20, p19, yokeInside, false);
 }
 
+void pantPointsSAF() {
+  h1 = parallelLinePoint(p1, p2, seamAllowance, true, true);
+  l2 = parallelLinePoint(p1, p2, seamAllowance, false, true);
+  h2 = parallelLinePoint(p2, p3, seamAllowance, true, true);
+  l3 = parallelLinePoint(p2, p3, seamAllowance, false, true);
+  h3 = parallelLinePoint(p3, p3a, seamAllowance, true, true);
+  l3a = parallelLinePoint(p3, p3a, seamAllowance, false, true);
+  h3a = parallelLinePoint(p3a, p4, seamAllowance, true, true);
+  l4 = parallelLinePoint(p3a, p4, seamAllowance, false, true);
+  h4 = parallelLinePoint(p4, p5, seamAllowance, true, true);
+  l5 = parallelLinePoint(p4, p5, seamAllowance, false, true);
+  h5 = parallelLinePoint(p5, p6, seamAllowance, true, true);
+  l6 = parallelLinePoint(p5, p6, seamAllowance, false, true);
+  h6 = parallelLinePoint(p6, p7, seamAllowance, true, false);
+  h7 = parallelLinePoint(p6, p7, seamAllowance, false, false);
+  l7 = parallelLinePoint(p7, p9, seamAllowance, true, false);
+  h9 = parallelLinePoint(p7, p9, seamAllowance, false, false);
+  l9 = parallelLinePoint(p9, p9a, seamAllowance, true, false);
+  h9a = parallelLinePoint(p9, p9a, seamAllowance, false, false);
+  l9a = parallelLinePoint(p9a, p10, seamAllowance, true, false);
+  h10 = parallelLinePoint(p9a, p10, seamAllowance, false, false);
+  l10 = parallelLinePoint(p10, p11, seamAllowance, true, false);
+  h11 = parallelLinePoint(p10, p11, seamAllowance, false, false);
+  l11 = parallelLinePoint(p11, p12, seamAllowance, true, false);
+  h12 = parallelLinePoint(p11, p12, seamAllowance, false, false);
+  l1 = p1.get();
+  l1.y += seamAllowance*2.;
+  l12 = p12.get();
+  l12.y += seamAllowance*2.;
+  csa1= shiftControlPoint(p7, p9, c1, seamAllowance, false);
+  csa2= shiftControlPoint(p7, p9, c2, seamAllowance, false);
+
+  sa1 = intersectAtDistance(l12, l1, l2, h1);
+  sa2 = intersectAtDistance(h1, l2, l3, h2);
+  sa3 = intersectAtDistance(h2, l3, l3a, h3);
+  sa3a = intersectAtDistance(h3, l3a, l4, h3a);
+  sa4 = intersectAtDistance(h3a, l4, l5, h4);
+  sa5 = intersectAtDistance(h4, l5, l6, h5);
+  sa6 = intersectAtDistance(h5, l6, h7, h6);
+  sa7 = intersectAtDistance(h6, h7, h9, l7);
+  sa9 = intersectAtDistance(l7, h9, h9a, l9);
+  sa9.y -= seamAllowance/3; //manual adjustment
+  sa9a = intersectAtDistance(l9, h9a, h10, l9a);
+  sa10 = intersectAtDistance(l9a, h10, h11, l10);
+  sa11 = intersectAtDistance(l10, h11, h12, l11);
+  sa12 = intersectAtDistance(l11, h12, l1, l12);
+}
+
+void pantPointsSAB() {
+  h13 = parallelLinePoint(p13, p14, seamAllowance, true, true);
+  l14 = parallelLinePoint(p13, p14, seamAllowance, false, true);
+  h14 = parallelLinePoint(p14, p15, seamAllowance, true, true);
+  l15 = parallelLinePoint(p14, p15, seamAllowance, false, true);
+  h15 = parallelLinePoint(p15, p15a, seamAllowance, true, true);
+  l15a = parallelLinePoint(p15, p15a, seamAllowance, false, true);
+  h15a = parallelLinePoint(p15a, p16, seamAllowance, true, true);
+  l16 = parallelLinePoint(p15a, p16, seamAllowance, false, true);
+  h16 = parallelLinePoint(p16, p17, seamAllowance, true, true);
+  l17 = parallelLinePoint(p16, p17, seamAllowance, false, true);
+  h17 = parallelLinePoint(p17, p18, seamAllowance, true, true);
+  l18 = parallelLinePoint(p17, p18, seamAllowance, false, true);
+  h18 = parallelLinePoint(p18, p19, seamAllowance, true, true);
+  h19 = parallelLinePoint(p18, p19, seamAllowance, false, true);
+  l19 = parallelLinePoint(p19, p21, seamAllowance, true, false);
+  h21 = parallelLinePoint(p19, p21, seamAllowance, false, false);
+  l21 = parallelLinePoint(p21, p21a, seamAllowance, true, false);
+  h21a = parallelLinePoint(p21, p21a, seamAllowance, false, false);
+  l21a = parallelLinePoint(p21a, p22, seamAllowance, true, false);
+  h22 = parallelLinePoint(p21a, p22, seamAllowance, false, false);
+  l22 = parallelLinePoint(p22, p23, seamAllowance, true, false);
+  h23 = parallelLinePoint(p10, p23, seamAllowance, false, false);
+  l23 = parallelLinePoint(p23, p24, seamAllowance, true, false);
+  h24 = parallelLinePoint(p23, p24, seamAllowance, false, false);
+  l13 = p13.get();
+  l13.y += seamAllowance*2.;
+  l24 = p24.get();
+  l24.y += seamAllowance*2.;
+  csa3= shiftControlPoint(p19, p21, c3, seamAllowance, false);
+  csa4= shiftControlPoint(p19, p21, c4, seamAllowance, false);
+
+  sa13 = intersectAtDistance(l24, l13, l14, h13);
+  sa14 = intersectAtDistance(h13, l14, l15, h14);
+  sa15 = intersectAtDistance(h14, l15, l15a, h15);
+  sa15a = intersectAtDistance(h15, l15a, l16, h15a);
+  sa16 = intersectAtDistance(h15a, l16, l17, h16);
+  sa17 = intersectAtDistance(h16, l17, l18, h17);
+  sa18 = intersectAtDistance(h17, l18, h19, h18);
+  sa19 = intersectAtDistance(h18, h19, h21, l19);
+  sa21 = intersectAtDistance(l19, h21, h21a, l21);
+  sa21.y -= seamAllowance/3; //manual adjustment
+  sa21a = intersectAtDistance(l21, h21a, h22, l21a);
+  sa22 = intersectAtDistance(l21a, h22, h23, l22);
+  sa23 = intersectAtDistance(l22, h23, h24, l23);
+  sa24 = intersectAtDistance(l23, h24, l13, l24);
+}
 
 ///FUNCTIONS
 
