@@ -238,6 +238,15 @@ void draw() {
     pocketShape();
     popMatrix();
   }
+  
+  float step = 1 * drawingScale;
+  stroke(128);
+  for(float y = 0; y < height; y += step) {
+    line(0, y, width, y);
+  }
+  for(float x = 0; x < width; x += step) {
+    line(x, 0, x, width);
+  }
 }
 
 
