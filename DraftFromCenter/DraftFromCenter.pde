@@ -241,11 +241,17 @@ void draw() {
   
   float step = 1 * drawingScale;
   stroke(128);
+  int i  = 1;
   for(float y = 0; y < height; y += step) {
+    stroke(i % 36 == 0 ? color(255, 0, 0) : color(128));
     line(0, y, width, y);
+    i++;
   }
+  i = 1;
   for(float x = 0; x < width; x += step) {
+    stroke(i % 36 == 0 ? color(255, 0, 0) : color(128));
     line(x, 0, x, width);
+    i++;
   }
 }
 
