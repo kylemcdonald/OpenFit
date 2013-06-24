@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		10b69de456aed1288fc9316b62b715d7 /* Tracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = a810df70319a10353588f5db2ed2e2b6 /* Tracker.cpp */; };
 		2023ef517ed2d8b397511d4bf2052690 /* Helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = b9076967f8c54a04362c04aa9e3bb906 /* Helpers.cpp */; };
+		2706EF421778C53000A3843A /* MiniFont.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2706EF401778C53000A3843A /* MiniFont.cpp */; };
 		27BBD761177246CC00725506 /* tinyxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27BBD75A177246CC00725506 /* tinyxml.cpp */; };
 		27BBD762177246CC00725506 /* tinyxmlerror.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27BBD75C177246CC00725506 /* tinyxmlerror.cpp */; };
 		27BBD763177246CC00725506 /* tinyxmlparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 27BBD75D177246CC00725506 /* tinyxmlparser.cpp */; };
@@ -86,6 +87,8 @@
 		03a75a648bc4cf1d9dedd0cea7826717 /* Flow.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = Flow.cpp; path = ../../../addons/ofxCv/libs/ofxCv/src/Flow.cpp; sourceTree = SOURCE_ROOT; };
 		10fca799088f15d2b81deaa8cdb55e2e /* registration.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = registration.h; path = ../../../addons/ofxKinect/libs/libfreenect/registration.h; sourceTree = SOURCE_ROOT; };
 		178547e33ce398c7b59f08abb9417787 /* ContourFinder.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ContourFinder.h; path = ../../../addons/ofxCv/libs/ofxCv/include/ofxCv/ContourFinder.h; sourceTree = SOURCE_ROOT; };
+		2706EF401778C53000A3843A /* MiniFont.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MiniFont.cpp; sourceTree = "<group>"; };
+		2706EF411778C53000A3843A /* MiniFont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MiniFont.h; sourceTree = "<group>"; };
 		27BBD75A177246CC00725506 /* tinyxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxml.cpp; sourceTree = "<group>"; };
 		27BBD75B177246CC00725506 /* tinyxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tinyxml.h; sourceTree = "<group>"; };
 		27BBD75C177246CC00725506 /* tinyxmlerror.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxmlerror.cpp; sourceTree = "<group>"; };
@@ -552,6 +555,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				2706EF401778C53000A3843A /* MiniFont.cpp */,
+				2706EF411778C53000A3843A /* MiniFont.h */,
 				27EEFF6717551D5C00EAD4F8 /* Geometry.cpp */,
 				27EEFF6817551D5C00EAD4F8 /* Geometry.h */,
 				27EEFF6417551CF900EAD4F8 /* ofApp.cpp */,
@@ -734,6 +739,7 @@
 				27BBD762177246CC00725506 /* tinyxmlerror.cpp in Sources */,
 				27BBD763177246CC00725506 /* tinyxmlparser.cpp in Sources */,
 				27BBD764177246CC00725506 /* ofxXmlSettings.cpp in Sources */,
+				2706EF421778C53000A3843A /* MiniFont.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

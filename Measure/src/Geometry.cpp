@@ -282,13 +282,13 @@ float distanceToRay(const ofVec2f& point, const ofVec2f& start, const ofVec2f& e
 	return closestPointOnRay(start, end, point).distance(point);					  
 }
 
-double perimeterOfEllipse(double a, double b) {
+double perimeterOfEllipse(double r0, double r1) {
 	double t,
 	tol = pow(0.5, 27),
 	s = 0,
 	m = 1,
-	x = MAX(a,b),
-	y = MIN(a,b);
+	x = MAX(r0,r1),
+	y = MIN(r0,r1);
 	while (x - y > tol * y) {
 		t = (x + y) / 2;
 		y = sqrt(x * y);
@@ -296,5 +296,5 @@ double perimeterOfEllipse(double a, double b) {
 		m *= 2;
 		s += m * (x - y) * (x - y);
 	}
-	return M_PI * ((a + b) * (a + b) - s) / (x + y);
+	return M_PI * ((r0 + r1) * (r0 + r1) - s) / (x + y);
 }
