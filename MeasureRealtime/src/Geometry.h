@@ -19,5 +19,3 @@ float distanceToEllipse(const ofVec2f& point, const cv::RotatedRect& ellipse);
 float distanceToRect(const ofVec2f& point, const cv::RotatedRect& rect);
 float distanceToRay(const ofVec2f& point, const ofVec2f& start, const ofVec2f& end);
 float distanceToLine(const ofVec2f& point, const ofVec2f& start, const ofVec2f& end);
-
-double perimeterOfEllipse(double a, double b);
