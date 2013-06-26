@@ -25,6 +25,7 @@ public:
 											 int& leftEdge, int& rightEdge,
 											 ofVec3f& leftPoint, ofVec3f& rightPoint);
 	ofVec3f ConvertProjectiveToRealWorld(float x, float y, float z);
+	ofPolyline ConvertProjectiveToRealWorld(const ofPolyline& polyline, float z);
 	ofVec3f sampleDepth(ofShortImage& depth, ofVec2f position);
 	
 	ofxUICanvas* gui;	
@@ -37,5 +38,5 @@ public:
 	ofShortImage depthSide;
 	
 	vector<pair<ofVec2f, ofVec2f> > frontEdges, sideEdges;
-	vector<float> heights, circumferences;
+	vector<float> heights, circumferences, depths;
 };

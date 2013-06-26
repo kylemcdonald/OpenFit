@@ -20,6 +20,7 @@
  
  */
 
+bool useCurvedCrotch = false;
 float backgroundThreshold = 1300;
 float ankle = 438;
 float calf = 360;
@@ -31,14 +32,12 @@ float hip = 90;
 float center = 261;
 float hipSide = 56;
 float ankleSide = 420;
-bool showKinect = false;
-bool saveFrame = false;
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
 
 ofVec3f floor1(576, 444),
-	floor2(585, 473),
-	floor3(16, 464);
+floor2(585, 473),
+floor3(16, 464);
 
 float millimetersToInches(float millimeters) {
 	return millimeters * 0.0393701;
@@ -55,6 +54,14 @@ ofVec3f ofApp::ConvertProjectiveToRealWorld(float x, float y, float z) {
 	return ofVec3f((x / Xres - .5f) * z * XtoZ,
 								 (y / Yres - .5f) * z * YtoZ,
 								 z);
+}
+
+ofPolyline ofApp::ConvertProjectiveToRealWorld(const ofPolyline& polyline, float z) {
+	ofPolyline result;
+	for(int i = 0; i < polyline.size(); i++) {
+		result.addVertex(ConvertProjectiveToRealWorld(polyline[i].x, polyline[i].y, z));
+	}
+	return result;
 }
 
 ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position) {
@@ -148,13 +155,12 @@ void ofApp::analyze() {
 	// some parts of the leg / torso are more elliptical, others are more rectangular,
 	// and the perimeter between an ellipse and rectangle are very different,
 	// so we calculate both and pick an inbetween value.
-	float rectangularity[] = {
-		0, .33, .25, .4, .35, .68, .3
-	};
+	float rectangularity[] = {0, .33, .25, .4, .35, .68, .3};
 	frontEdges.clear();
 	sideEdges.clear();
 	heights.clear();
 	circumferences.clear();
+	depths.clear();
 	for(int i = 0; i < samples.size(); i++) {
 		ofVec3f left, right;
 		int y = samples[i];
@@ -178,6 +184,7 @@ void ofApp::analyze() {
 		y = ofMap(y, ankle, hip, ankleSide, hipSide);
 		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 		sideEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+		depths.push_back(leftPoint.z);
 		
 		float perimeterEllipse = perimeterOfEllipse(front / 2, side / 2);
 		float perimeterRectangle = 2 * (front + side);
@@ -189,13 +196,12 @@ void ofApp::analyze() {
 }
 
 void ofApp::setupGui() {
-	showKinect = true;
-	
 	gui = new ofxUICanvas();
 	gui->addLabel("Measure");
 	gui->addSpacer();
 	gui->addFPS();
 	gui->addSpacer();
+	gui->addToggle("Curved crotch", &useCurvedCrotch);
 	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
 	gui->addSlider("Ankle", 0, 640, &ankle);
 	gui->addSlider("Calf", 0, 640, &calf);
@@ -219,6 +225,7 @@ void ofApp::update() {
 
 void ofApp::draw() {
 	ofBackground(0);
+	
 	ofSetColor(255);
 	maskFront.draw(0, 0);	
 	colorFront.draw(640, 0);
@@ -248,14 +255,14 @@ void ofApp::draw() {
 	}
 	
 	ofPushMatrix();
-	ofSetColor(magentaPrint);
-	ofCircle(floor1, 4);
-	ofCircle(floor2, 4);
-	ofCircle(floor3, 4);
+	ofSetColor(255);
+	ofCircle(floor1, 4); MiniFont::drawHighlight("floor1", floor1);	
+	ofCircle(floor2, 4); MiniFont::drawHighlight("floor2", floor2);
+	ofCircle(floor3, 4); MiniFont::drawHighlight("floor3", floor3);
 	ofTranslate(640, 0);
-	ofCircle(floor1, 4);
-	ofCircle(floor2, 4);
-	ofCircle(floor3, 4);
+	ofCircle(floor1, 4); MiniFont::drawHighlight("floor1", floor1);	
+	ofCircle(floor2, 4); MiniFont::drawHighlight("floor2", floor2);
+	ofCircle(floor3, 4); MiniFont::drawHighlight("floor3", floor3);
 	ofPopMatrix();
 	
 	ofPushMatrix();
@@ -277,9 +284,42 @@ void ofApp::draw() {
 		ofNoFill();
 		ofCircle(sideEdges[i].first, 3);
 		ofCircle(sideEdges[i].second, 3);
+		if(i + 1 < sideEdges.size()) {
+			ofSetColor(cyanPrint);
+			ofLine(sideEdges[i].first, sideEdges[i + 1].first);
+			ofLine(sideEdges[i].second, sideEdges[i + 1].second);
+		}
 		MiniFont::drawHighlight(names[i], sideEdges[i].first);
-		MiniFont::drawHighlight("c" + ofToString(millimetersToInches(heights[i])) + " / c" + ofToString(millimetersToInches(circumferences[i])), sideEdges[i].second);
+		MiniFont::drawHighlight("h" + ofToString(millimetersToInches(heights[i])) + " / c" + ofToString(millimetersToInches(circumferences[i])), sideEdges[i].second);
 	}
+	
+	ofPolyline crotch;
+	if(useCurvedCrotch) {
+		crotch.curveTo(sideEdges[6].first);
+		crotch.curveTo(sideEdges[6].first);
+		crotch.curveTo(sideEdges[5].first);
+		crotch.curveTo(sideEdges[4].second);
+		crotch.curveTo(sideEdges[5].second);
+		crotch.curveTo(sideEdges[6].second);
+		crotch.curveTo(sideEdges[6].second);
+	} else {
+		crotch.addVertex(sideEdges[6].first);
+		crotch.addVertex(sideEdges[5].first);
+		crotch.addVertex(sideEdges[4].second);
+		crotch.addVertex(sideEdges[5].second);
+		crotch.addVertex(sideEdges[6].second);
+	}
+	ofSetColor(magentaPrint);
+	crotch.draw();
+	float crotchDepth = 0;
+	for(int i = 0; i < depths.size(); i++) {
+		if(i == 0 || depths[i] > crotchDepth) {
+			crotchDepth = depths[i];
+		}
+	}
+	float crotchLength = ConvertProjectiveToRealWorld(crotch, crotchDepth).getPerimeter();
+	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotch.getCentroid2D());
+	
 	ofPopMatrix();
 }
 
