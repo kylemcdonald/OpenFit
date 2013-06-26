@@ -21,6 +21,7 @@
  */
 
 bool useCurvedCrotch = false;
+float colorAlpha = 128;
 float backgroundThreshold = 1300;
 float ankle = 438;
 float calf = 360;
@@ -202,6 +203,7 @@ void ofApp::setupGui() {
 	gui->addFPS();
 	gui->addSpacer();
 	gui->addToggle("Curved crotch", &useCurvedCrotch);
+	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
 	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
 	gui->addSlider("Ankle", 0, 640, &ankle);
 	gui->addSlider("Calf", 0, 640, &calf);
@@ -228,7 +230,10 @@ void ofApp::draw() {
 	
 	ofSetColor(255);
 	maskFront.draw(0, 0);	
-	colorFront.draw(640, 0);
+	ofPushStyle();
+	ofSetColor(255, colorAlpha);
+	colorFront.draw(0, 0);
+	ofPopStyle();
 	
 	vector<string> names;
 	vector<float> samples;
@@ -241,8 +246,8 @@ void ofApp::draw() {
 	samples.push_back(hip); names.push_back("hip");
 	for(int i = 0; i < samples.size(); i++) {
 		int y = samples[i];
-		ofLine(0, y, ofGetWidth(), y);
-		MiniFont::drawHighlight(names[i], 640, y);
+		ofLine(0, y, 640, y);
+		MiniFont::drawHighlight(names[i], 540, y);
 	}
 	ofLine(center, 0, center, 480);
 	for(int i = 0; i < frontEdges.size(); i++) {
@@ -259,23 +264,22 @@ void ofApp::draw() {
 	ofCircle(floor1, 4); MiniFont::drawHighlight("floor1", floor1);	
 	ofCircle(floor2, 4); MiniFont::drawHighlight("floor2", floor2);
 	ofCircle(floor3, 4); MiniFont::drawHighlight("floor3", floor3);
-	ofTranslate(640, 0);
-	ofCircle(floor1, 4); MiniFont::drawHighlight("floor1", floor1);	
-	ofCircle(floor2, 4); MiniFont::drawHighlight("floor2", floor2);
-	ofCircle(floor3, 4); MiniFont::drawHighlight("floor3", floor3);
 	ofPopMatrix();
 	
 	ofPushMatrix();
 	ofTranslate(0, 480);
 	ofSetColor(255);
 	maskSide.draw(0, 0);
-	colorSide.draw(640, 0);
+	ofPushStyle();
+	ofSetColor(255, colorAlpha);
+	colorSide.draw(0, 0);
+	ofPopStyle();
 	
 	for(int i = 0; i < samples.size(); i++) {
 		float y = samples[i];
 		y = ofMap(y, ankle, hip, ankleSide, hipSide);
-		ofLine(0, y, ofGetWidth(), y);
-		MiniFont::drawHighlight(names[i], 640, y);
+		ofLine(0, y, 640, y);
+		MiniFont::drawHighlight(names[i], 540, y);
 	}
 	for(int i = 0; i < sideEdges.size(); i++) {
 		ofSetColor(0);
