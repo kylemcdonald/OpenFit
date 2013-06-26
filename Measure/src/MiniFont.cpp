@@ -27,6 +27,10 @@ namespace MiniFont {
 		font.drawString(str, x, y);
 	}
 	
+	void drawHighlight(string str, const ofVec2f& position, ofColor bg, ofColor fg) {
+		drawHighlight(str, position.x, position.y, bg, fg);
+	}
+	
 	void drawHighlight(string str, float x, float y, ofColor bg, ofColor fg) {
 		ofPushStyle();
 		ofPushMatrix();
@@ -36,6 +40,7 @@ namespace MiniFont {
 		rect.x -= padding, rect.y -= padding;
 		rect.width += padding * 2, rect.height += padding * 2;
 		ofTranslate(ofVec2f(x, y) - rect.getTopLeft());
+		ofFill();
 		ofRect(rect);
 		ofSetColor(fg);
 		font.drawString(str, x, y);
