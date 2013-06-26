@@ -9,8 +9,6 @@
 using namespace ofxCv;
 using namespace cv;
 
-
-
 class ofApp : public ofBaseApp {
 public:
 	void setup();
@@ -22,8 +20,10 @@ public:
 	
 	float measureSegment(int y, ofShortImage& depth, ofImage& mask,
 											 int leftBoundary, int rightBoundary,
-											 int& leftEdge, int& rightEdge,
-											 ofVec3f& leftPoint, ofVec3f& rightPoint);
+											 ofVec3f& leftEdge, ofVec3f& rightEdge,
+											 ofVec3f& leftPoint, ofVec3f& rightPoint,
+											 float slope = 0);
+	ofVec3f ConvertProjectiveToRealWorld(const ofVec3f& point);
 	ofVec3f ConvertProjectiveToRealWorld(float x, float y, float z);
 	ofPolyline ConvertProjectiveToRealWorld(const ofPolyline& polyline, float z);
 	ofVec3f sampleDepth(ofShortImage& depth, ofVec2f position);

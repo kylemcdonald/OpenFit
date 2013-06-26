@@ -1,25 +1,6 @@
 #include "ofApp.h"
 #include "Geometry.h"
 
-/*
- 2 vertical planes - one that splits the crotch, one that divides front and back
- 
- horizontal planes
- d6 = floor
- d5 = ankle, at skinniest part
- d6 = calf, at widest part
- d3 = knee, where that bone bulges on the inside
- d2 = thigh, at the top by the crotch
- d2a = "midthigh", 3 inch below thigh (nice control point for inner leg curve)
- d1= "butt", widest part
- 
- - - --
- 
- last plane, hip, is tilted forward, and butt-to-hip vertical measurements are taken for F, S, & B.
- need to measure the crotch length
- 
- */
-
 bool useCurvedCrotch = false;
 float colorAlpha = 128;
 float backgroundThreshold = 1300;
@@ -30,6 +11,7 @@ float thigh = 170;
 float midthigh = 208;
 float butt = 134;
 float hip = 90;
+float hipSlope = -.32;
 float center = 261;
 float hipSide = 56;
 float ankleSide = 420;
@@ -51,6 +33,10 @@ const float YtoZ = tanf(FovY / 2) * 2;
 const unsigned int Xres = 640;
 const unsigned int Yres = 480;
 
+ofVec3f ofApp::ConvertProjectiveToRealWorld(const ofVec3f& point) {
+	return ConvertProjectiveToRealWorld(point.x, point.y, point.z);
+}
+	
 ofVec3f ofApp::ConvertProjectiveToRealWorld(float x, float y, float z) {
 	return ofVec3f((x / Xres - .5f) * z * XtoZ,
 								 (y / Yres - .5f) * z * YtoZ,
@@ -89,28 +75,39 @@ void ofApp::setup() {
 
 float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 														int leftBoundary, int rightBoundary,
-														int& leftEdge, int& rightEdge,
-														ofVec3f& leftPoint, ofVec3f& rightPoint) {
+														ofVec3f& leftEdge, ofVec3f& rightEdge,
+														ofVec3f& leftPoint, ofVec3f& rightPoint,
+														float slope) {
 	unsigned short farthest = 0;
-	leftEdge = 0, rightEdge = 0;
+	leftEdge = ofVec3f(), rightEdge = ofVec3f();
+	bool foundLeft = false;
 	int w = depth.getWidth(), h = depth.getHeight();
 	unsigned short* depthPixels = depth.getPixels();
 	unsigned char* maskPixels = mask.getPixels();
 	for(int x = leftBoundary; x < rightBoundary; x++) {
-		int j = y * w + x;
+		int j;
+		int cury = y;
+		if(foundLeft) {
+			cury = y + (x - leftEdge.x) * slope;
+		}
+		if(cury < 0 || cury >= h) {
+			break;
+		}
+		j = cury * w + x;
 		if(maskPixels[j] == 255) {
-			unsigned short cur = depthPixels[j];
-			if(cur > farthest) {
-				farthest = cur;
+			unsigned short curDepth = depthPixels[j];
+			if(curDepth > farthest) {
+				farthest = curDepth;
 			}
-			if(leftEdge == 0) {
-				leftEdge = x;
+			if(!foundLeft) {
+				leftEdge.set(x, cury, curDepth);
+				foundLeft = true;
 			}
-			rightEdge = x;
+			rightEdge.set(x, cury, curDepth);
 		}
 	}
-	leftPoint.set(ConvertProjectiveToRealWorld(leftEdge, y, farthest));
-	rightPoint.set(ConvertProjectiveToRealWorld(rightEdge, y, farthest));
+	leftPoint.set(ConvertProjectiveToRealWorld(leftEdge));
+	rightPoint.set(ConvertProjectiveToRealWorld(rightEdge));
 	return leftPoint.distance(rightPoint);
 }
 
@@ -163,19 +160,18 @@ void ofApp::analyze() {
 	circumferences.clear();
 	depths.clear();
 	for(int i = 0; i < samples.size(); i++) {
-		ofVec3f left, right;
 		int y = samples[i];
 		ofVec3f leftPoint, rightPoint;
-		int leftEdge, rightEdge;
+		ofVec3f leftEdge, rightEdge;
 		float front;
 		if(torso[i]) {
 			front = measureSegment(y, depthFront, maskFront, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 		} else {
 			front = measureSegment(y, depthFront, maskFront, 0, center, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 			front += measureSegment(y, depthFront, maskFront, center, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 			front /= 2;
 		}
 		
@@ -183,8 +179,12 @@ void ofApp::analyze() {
 		heights.push_back(leftPoint.distance(projectedToFloor));
 		
 		y = ofMap(y, ankle, hip, ankleSide, hipSide);
-		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-		sideEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+		float slope = 0;
+		if(names[i] == "hip") {
+			slope = hipSlope;
+		}
+		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint, slope);
+		sideEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 		depths.push_back(leftPoint.z);
 		
 		float perimeterEllipse = perimeterOfEllipse(front / 2, side / 2);
@@ -212,6 +212,7 @@ void ofApp::setupGui() {
 	gui->addSlider("Thigh", 0, 640, &thigh);
 	gui->addSlider("Butt", 0, 640, &butt);
 	gui->addSlider("Hip", 0, 640, &hip);
+	gui->addSlider("Hip slope", -1, 1, &hipSlope);
 	gui->addSlider("Center", 0, 640, &center);
 	gui->addSlider("Hip (side)", 0, 640, &hipSide);
 	gui->addSlider("Ankle (side)", 0, 640, &ankleSide);
@@ -279,7 +280,6 @@ void ofApp::draw() {
 		float y = samples[i];
 		y = ofMap(y, ankle, hip, ankleSide, hipSide);
 		ofLine(0, y, 640, y);
-		MiniFont::drawHighlight(names[i], 540, y);
 	}
 	for(int i = 0; i < sideEdges.size(); i++) {
 		ofSetColor(0);
@@ -298,6 +298,7 @@ void ofApp::draw() {
 	}
 	
 	ofPolyline crotch;
+	/*
 	if(useCurvedCrotch) {
 		crotch.curveTo(sideEdges[6].first);
 		crotch.curveTo(sideEdges[6].first);
@@ -313,6 +314,7 @@ void ofApp::draw() {
 		crotch.addVertex(sideEdges[5].second);
 		crotch.addVertex(sideEdges[6].second);
 	}
+	 */
 	ofSetColor(magentaPrint);
 	crotch.draw();
 	float crotchDepth = 0;
