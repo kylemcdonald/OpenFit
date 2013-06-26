@@ -100,12 +100,14 @@ float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 				farthest = curDepth;
 			}
 			if(!foundLeft) {
-				leftEdge.set(x, cury, curDepth);
+				leftEdge.set(x, cury);
 				foundLeft = true;
 			}
-			rightEdge.set(x, cury, curDepth);
+			rightEdge.set(x, cury);
 		}
 	}
+	leftEdge.z = farthest;
+	rightEdge.z = farthest;
 	leftPoint.set(ConvertProjectiveToRealWorld(leftEdge));
 	rightPoint.set(ConvertProjectiveToRealWorld(rightEdge));
 	return leftPoint.distance(rightPoint);
