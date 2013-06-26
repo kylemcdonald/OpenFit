@@ -2,20 +2,19 @@
 #include "Geometry.h"
 
 bool saveToJson = false;
-bool useCurvedCrotch = false;
 float colorAlpha = 128;
 float backgroundThreshold = 1300;
-float ankle = 438;
-float calf = 360;
-float knee = 290;
-float thigh = 170;
-float midthigh = 208;
-float butt = 134;
-float hip = 90;
-float hipSlope = .32;
-float center = 261;
 float hipSide = 56;
 float ankleSide = 420;
+float ankleFront = 438;
+float hipFront = 90;
+float calf = .25;
+float knee = .40;
+float midthigh = .67;
+float thigh = .75;
+float butt = .90;
+float hipSlope = .32;
+float center = 261;
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
 
@@ -140,13 +139,13 @@ void ofApp::analyze() {
 	
 	vector<string> names;
 	vector<float> samples;
-	samples.push_back(ankle); names.push_back("ankle");
-	samples.push_back(calf); names.push_back("calf");
-	samples.push_back(knee); names.push_back("knee");
-	samples.push_back(midthigh); names.push_back("midthigh");
-	samples.push_back(thigh); names.push_back("thigh");
-	samples.push_back(butt); names.push_back("butt");
-	samples.push_back(hip); names.push_back("hip");
+	samples.push_back(ankleFront); names.push_back("ankle");
+	samples.push_back(ofLerp(ankleFront, hipFront, calf)); names.push_back("calf");
+	samples.push_back(ofLerp(ankleFront, hipFront, knee)); names.push_back("knee");
+	samples.push_back(ofLerp(ankleFront, hipFront, midthigh)); names.push_back("midthigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, thigh)); names.push_back("thigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, butt)); names.push_back("butt");
+	samples.push_back(hipFront); names.push_back("hip");
 	
 	bool torso[] = {
 		false, false, false, false, false, true, true
@@ -166,22 +165,30 @@ void ofApp::analyze() {
 		int y = samples[i];
 		ofVec3f leftPoint, rightPoint;
 		ofVec3f leftEdge, rightEdge;
+		ofVec3f projectedToFloor;
 		float front;
 		if(torso[i]) {
 			front = measureSegment(y, depthFront, maskFront, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, leftPoint);
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, rightPoint);
+			projectedToFloor /= 2;
 		} else {
 			front = measureSegment(y, depthFront, maskFront, 0, center, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, leftPoint);
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, rightPoint);
 			front += measureSegment(y, depthFront, maskFront, center, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, leftPoint);
+			projectedToFloor += closestPointOnPlane(f1, floorNormal, rightPoint);
+			projectedToFloor /= 4;
 			front /= 2;
 		}
 		
-		ofVec3f projectedToFloor = closestPointOnPlane(f1, floorNormal, leftPoint);
 		heights.push_back(leftPoint.distance(projectedToFloor));
 		
-		y = ofMap(y, ankle, hip, ankleSide, hipSide);
+		y = ofMap(y, ankleFront, hipFront, ankleSide, hipSide);
 		float slope = 0;
 		if(names[i] == "hip") {
 			slope = hipSlope;
@@ -197,6 +204,22 @@ void ofApp::analyze() {
 		//cout << names[i] << ": " << front << "mm x " << side << "mm = " << circumference << "mm" << endl;
 		//cout << names[i] << ": " << millimetersToInches(front) << "in x " << millimetersToInches(side) << "in = " << millimetersToInches(circumference) << "in" << endl;
 	}
+	
+	crotch.clear();
+	crotch.addVertex(sideEdges[6].first);
+	crotch.addVertex(sideEdges[5].first);
+	crotch.addVertex(sideEdges[4].second);
+	crotch.addVertex(sideEdges[5].second);
+	crotch.addVertex(sideEdges[6].second);
+	
+	float crotchDepth = 0;
+	// should use points instead of depths
+	for(int i = 0; i < depths.size(); i++) {
+		if(i == 0 || depths[i] > crotchDepth) {
+			crotchDepth = depths[i];
+		}
+	}
+	crotchLength = ConvertProjectiveToRealWorld(crotch, crotchDepth).getPerimeter();
 }
 
 void ofApp::setupGui() {
@@ -206,20 +229,19 @@ void ofApp::setupGui() {
 	gui->addFPS();
 	gui->addSpacer();
 	gui->addLabelButton("Save to JSON", &saveToJson);
-	gui->addLabelToggle("Curved crotch", &useCurvedCrotch);
 	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
 	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
-	gui->addSlider("Ankle", 0, 640, &ankle);
-	gui->addSlider("Calf", 0, 640, &calf);
-	gui->addSlider("Knee", 0, 640, &knee);
-	gui->addSlider("Midthigh", 0, 640, &midthigh);
-	gui->addSlider("Thigh", 0, 640, &thigh);
-	gui->addSlider("Butt", 0, 640, &butt);
-	gui->addSlider("Hip", 0, 640, &hip);
+	gui->addSlider("Hip (front)", 0, 640, &hipFront);
+	gui->addSlider("Hip (side)", 0, 640, &hipSide);
+	gui->addSlider("Ankle (front)", 0, 640, &ankleFront);
+	gui->addSlider("Ankle (side)", 0, 640, &ankleSide);
+	gui->addSlider("Calf", 0, 1, &calf);
+	gui->addSlider("Knee", 0, 1, &knee);
+	gui->addSlider("Midthigh", 0, 1, &midthigh);
+	gui->addSlider("Thigh", 0, 1, &thigh);
+	gui->addSlider("Butt", 0, 1, &butt);
 	gui->addSlider("Hip slope", -1, 1, &hipSlope);
 	gui->addSlider("Center", 0, 640, &center);
-	gui->addSlider("Hip (side)", 0, 640, &hipSide);
-	gui->addSlider("Ankle (side)", 0, 640, &ankleSide);
 	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 200, 150);
 	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 200, 150);
 	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 200, 150);
@@ -238,6 +260,7 @@ void ofApp::update() {
 		file << "\t\"midthigh\" : " << millimetersToInches(circumferences[4]) << "," << endl;
 		file << "\t\"butt\" : " << millimetersToInches(circumferences[5]) << "," << endl;
 		file << "\t\"hip\" : " << millimetersToInches(circumferences[6]) << "," << endl;
+		file << "\t\"crotchLength\" : " << crotchLength << "," << endl;
 		file << "\t\"hipSlope\" : " << hipSlope << "," << endl;
 		file << "\t\"ankleToFloor\" : " << millimetersToInches(heights[0]) << "," << endl;
 		file << "\t\"calfToFloor\" : " << millimetersToInches(heights[1]) << "," << endl;
@@ -263,13 +286,13 @@ void ofApp::draw() {
 	
 	vector<string> names;
 	vector<float> samples;
-	samples.push_back(ankle); names.push_back("ankle");
-	samples.push_back(calf); names.push_back("calf");
-	samples.push_back(knee); names.push_back("knee");
-	samples.push_back(midthigh); names.push_back("midthigh");
-	samples.push_back(thigh); names.push_back("thigh");
-	samples.push_back(butt); names.push_back("butt");
-	samples.push_back(hip); names.push_back("hip");
+	samples.push_back(ankleFront); names.push_back("ankle");
+	samples.push_back(ofLerp(ankleFront, hipFront, calf)); names.push_back("calf");
+	samples.push_back(ofLerp(ankleFront, hipFront, knee)); names.push_back("knee");
+	samples.push_back(ofLerp(ankleFront, hipFront, midthigh)); names.push_back("midthigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, thigh)); names.push_back("thigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, butt)); names.push_back("butt");
+	samples.push_back(hipFront); names.push_back("hip");
 	for(int i = 0; i < samples.size(); i++) {
 		int y = samples[i];
 		ofLine(0, y, 640, y);
@@ -303,7 +326,7 @@ void ofApp::draw() {
 	
 	for(int i = 0; i < samples.size(); i++) {
 		float y = samples[i];
-		y = ofMap(y, ankle, hip, ankleSide, hipSide);
+		y = ofMap(y, ankleFront, hipFront, ankleSide, hipSide);
 		ofLine(0, y, 640, y);
 	}
 	for(int i = 0; i < sideEdges.size(); i++) {
@@ -322,31 +345,8 @@ void ofApp::draw() {
 		MiniFont::drawHighlight("h" + ofToString(millimetersToInches(heights[i])) + " / c" + ofToString(millimetersToInches(circumferences[i])), sideEdges[i].second);
 	}
 	
-	ofPolyline crotch;
-	if(useCurvedCrotch) {
-		crotch.curveTo(sideEdges[6].first);
-		crotch.curveTo(sideEdges[6].first);
-		crotch.curveTo(sideEdges[5].first);
-		crotch.curveTo(sideEdges[4].second);
-		crotch.curveTo(sideEdges[5].second);
-		crotch.curveTo(sideEdges[6].second);
-		crotch.curveTo(sideEdges[6].second);
-	} else {
-		crotch.addVertex(sideEdges[6].first);
-		crotch.addVertex(sideEdges[5].first);
-		crotch.addVertex(sideEdges[4].second);
-		crotch.addVertex(sideEdges[5].second);
-		crotch.addVertex(sideEdges[6].second);
-	}
 	ofSetColor(magentaPrint);
 	crotch.draw();
-	float crotchDepth = 0;
-	for(int i = 0; i < depths.size(); i++) {
-		if(i == 0 || depths[i] > crotchDepth) {
-			crotchDepth = depths[i];
-		}
-	}
-	float crotchLength = ConvertProjectiveToRealWorld(crotch, crotchDepth).getPerimeter();
 	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotch.getCentroid2D());
 	
 	ofPopMatrix();

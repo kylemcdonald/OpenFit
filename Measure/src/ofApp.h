@@ -39,4 +39,7 @@ public:
 	
 	vector<pair<ofVec2f, ofVec2f> > frontEdges, sideEdges;
 	vector<float> heights, circumferences, depths;
+	
+	ofPolyline crotch;
+	float crotchLength;
 };
