@@ -1,0 +1,19 @@
+By The Book Measurement List  
+
+inseam: crotch to floor 
+sideseam: waist to hemline (not floor to waist)
+hipCircumference: the "fullest part of your hip" 
+crotchDepth: from waist to seat when you're sitting
+hemCircumference: also called "ankle", based on your favorite pants
+
+used in Pant Front only:
+
+stomachOffset: range from -3/8 (flat stomach) to +5/8 (protruding stomach) 
+crotchOffset: anywhere from 1/4 to 3/8 (very little difference)
+
+used in Pant Back only:
+
+waist: waist circumference at the smallest part
+derriereShape: normal/average derriere: 1+5/8, flat derriere: 2, protruding derriere: 7/8
+takeInCenterBack: how much to take in the center back: usually 1/4" to 3/8"
+dartDepth: how deep dart at waist should be, perhaps 2"
