@@ -1,6 +1,7 @@
 #include "ofApp.h"
 #include "Geometry.h"
 
+bool saveToJson = false;
 bool useCurvedCrotch = false;
 float colorAlpha = 128;
 float backgroundThreshold = 1300;
@@ -11,7 +12,7 @@ float thigh = 170;
 float midthigh = 208;
 float butt = 134;
 float hip = 90;
-float hipSlope = -.32;
+float hipSlope = .32;
 float center = 261;
 float hipSide = 56;
 float ankleSide = 420;
@@ -88,7 +89,7 @@ float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 		int j;
 		int cury = y;
 		if(foundLeft) {
-			cury = y + (x - leftEdge.x) * slope;
+			cury = y + (x - leftEdge.x) * -slope;
 		}
 		if(cury < 0 || cury >= h) {
 			break;
@@ -204,7 +205,8 @@ void ofApp::setupGui() {
 	gui->addSpacer();
 	gui->addFPS();
 	gui->addSpacer();
-	gui->addToggle("Curved crotch", &useCurvedCrotch);
+	gui->addLabelButton("Save to JSON", &saveToJson);
+	gui->addLabelToggle("Curved crotch", &useCurvedCrotch);
 	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
 	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
 	gui->addSlider("Ankle", 0, 640, &ankle);
@@ -226,6 +228,27 @@ void ofApp::setupGui() {
 
 void ofApp::update() {
 	analyze();
+	if(saveToJson) {
+		ofFile file("measurements.json", ofFile::WriteOnly);
+		file << "{" << endl;
+		file << "\t\"ankle\" : " << millimetersToInches(circumferences[0]) << "," << endl;
+		file << "\t\"calf\" : " << millimetersToInches(circumferences[1]) << "," << endl;
+		file << "\t\"knee\" : " << millimetersToInches(circumferences[2]) << "," << endl;
+		file << "\t\"thigh\" : " << millimetersToInches(circumferences[3]) << "," << endl;
+		file << "\t\"midthigh\" : " << millimetersToInches(circumferences[4]) << "," << endl;
+		file << "\t\"butt\" : " << millimetersToInches(circumferences[5]) << "," << endl;
+		file << "\t\"hip\" : " << millimetersToInches(circumferences[6]) << "," << endl;
+		file << "\t\"hipSlope\" : " << hipSlope << "," << endl;
+		file << "\t\"ankleToFloor\" : " << millimetersToInches(heights[0]) << "," << endl;
+		file << "\t\"calfToFloor\" : " << millimetersToInches(heights[1]) << "," << endl;
+		file << "\t\"kneeToFloor\" : " << millimetersToInches(heights[2]) << "," << endl;
+		file << "\t\"thighToFloor\" : " << millimetersToInches(heights[3]) << "," << endl;
+		file << "\t\"midthighToFloor\" : " << millimetersToInches(heights[4]) << "," << endl;
+		file << "\t\"buttToFloor\" : " << millimetersToInches(heights[5]) << "," << endl;
+		file << "\t\"hipToFloor\" : " << millimetersToInches(heights[6]) << endl;
+		file << "}" << endl;
+		saveToJson = false;
+	}
 }
 
 void ofApp::draw() {
@@ -300,7 +323,6 @@ void ofApp::draw() {
 	}
 	
 	ofPolyline crotch;
-	/*
 	if(useCurvedCrotch) {
 		crotch.curveTo(sideEdges[6].first);
 		crotch.curveTo(sideEdges[6].first);
@@ -316,7 +338,6 @@ void ofApp::draw() {
 		crotch.addVertex(sideEdges[5].second);
 		crotch.addVertex(sideEdges[6].second);
 	}
-	 */
 	ofSetColor(magentaPrint);
 	crotch.draw();
 	float crotchDepth = 0;
