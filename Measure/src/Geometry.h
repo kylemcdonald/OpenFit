@@ -8,7 +8,10 @@
 
 void rotateToNormal(ofVec3f normal);
 void approximatePlane(const vector<ofVec3f>& points, int iterations, ofVec3f& center, ofVec3f& normal);
+ofVec3f getNormal(const ofVec3f& v1, const ofVec3f& v2, const ofVec3f& v3);
 
+ofVec3f closestPointOnPlane(const ofVec3f& center, const ofVec3f& normal, const ofVec3f& p1, const ofVec3f& p2);
+ofVec3f closestPointOnPlane(const ofVec3f& center, const ofVec3f& normal, const ofVec3f& p1);
 ofVec2f closestPointOnRay(const ofVec2f& p1, const ofVec2f& p2, const ofVec2f& p3);
 ofVec2f closestPointOnLine(const ofVec2f& p1, const ofVec2f& p2, const ofVec2f& p3);
 ofVec2f closestPointOnRect(const cv::RotatedRect& rect, const ofVec2f& point);

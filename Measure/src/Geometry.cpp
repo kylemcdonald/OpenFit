@@ -16,6 +16,22 @@ void rotateToNormal(ofVec3f normal) {
 	ofRotate(rotationAmount, rotationAngle.x, rotationAngle.y, rotationAngle.z);
 }
 
+ofVec3f getNormal(const ofVec3f& v1, const ofVec3f& v2, const ofVec3f& v3) {
+	ofVec3f a = v1 - v2;
+	ofVec3f b = v3 - v2;
+	ofVec3f normal = b.cross(a);
+	normal.normalize();
+	return normal;
+}
+
+ofVec3f closestPointOnPlane(const ofVec3f& center, const ofVec3f& normal, const ofVec3f& p1, const ofVec3f& p2) {
+	float u = normal.dot(center - p1) / normal.dot(p2 - p1);
+	return p1.getInterpolated(p2, u);
+}
+
+ofVec3f closestPointOnPlane(const ofVec3f& center, const ofVec3f& normal, const ofVec3f& p1) {
+	return closestPointOnPlane(center, normal, p1, p1 + normal);
+}
 
 // needs improvement. right now it just looks for the biggest cross product
 void approximatePlane(const vector<ofVec3f>& points, int iterations, ofVec3f& center, ofVec3f& normal)
