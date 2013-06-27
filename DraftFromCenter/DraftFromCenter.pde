@@ -9,6 +9,22 @@ float drawingScale = 15; // 30 to zoom in on crotch, 15 is nice on macbook air
 float pointSize = 6;
 
 // measurements on lisa, in inches
+float hipEase = -1.;
+float buttEase = -1.;
+float thighEase = -.5;
+float kneeEase = 1.; 
+float calfEase = -.5; 
+float ankleEase = 4;
+// pant specific variables
+float hemHeight = 0; // 0 is ankle, - or + inches above and below
+boolean pocket = false;
+float pocketHeight = 2;
+float pocketWidth = 3;
+boolean yoke = false;
+float yokeInside = 2;
+float yokeOutside = 1.25;
+float seamAllowance = 3/8.;
+
 //vertical measurements
 float inseam = 31; // crotch to floor 
 float sideseam = 37; // hip to floor
@@ -49,13 +65,7 @@ float crotchToButt = 2.5;
 
 // ease variables, defaults to skinny jean
 // negative if smaller than body
-// ease operate
-float hipEase = -1.;
-float buttEase = -1.;
-float thighEase = -.5;
-float kneeEase = 1.;
-float calfEase = -.5;
-float ankleEase = 4.5;
+// ease operate on x axis, comparison between body point and pant point
 
 // Drafting points mark horizontal planes
 // Body points are drafted in the following order:
@@ -70,12 +80,16 @@ float ankleEase = 4.5;
 PVector d0, d1, d2, d2a, d3, d4, d5, d6, d0R; // drafting points
 PVector b1, b2, b3, b3a, b4, b5, b6, b7, b8, b9, b9a, b10, b11, b12, cp1, cp2; //body points front
 PVector b13, b14, b15, b15a, b16, b17, b18, b19, b20, b20a, b21, b21a, b22, b23, b24, cp3, cp4; //body points back
+PVector p1, p2, p3, p3a, p4, p5, p6, p7, p8, p9, p9a, p10, p11, p12; //pant points front
+PVector p13, p14, p15, p15a, p16, p17, p18, p19, p20, p21, p21a, p22, p23, p24; // pant points back
+//PVector p5a, p6a, c5, c6, p4a, p4b, p6b; // front pocket, currently only half size
+//PVector p17a, p19a; // yoke
+
 
 void setup() {  
   size(900, 720);
   font = createFont("Arial", 12);
-  textFont(font); 
-  cp5 = new ControlP5(this);
+  textFont(font);
   measurementGui();
 }
 
@@ -98,6 +112,8 @@ void draw() {
   draftingPoints();
   bodyPointsF();
   bodyPointsB();
+  pantPointsF();
+  pantPointsB();
 
   //drafting points
   pushMatrix();
@@ -105,20 +121,32 @@ void draw() {
   drawDraftingPoints();
   popMatrix();
 
-  // pant front
+  // front
   pushMatrix();
   translateScale (12, 8);
-  drawBodyPointsF(); 
+  
+  //BODY FRONT
+  //drawBodyPointsF(); 
   drawBezier(b9, cp1, cp2, b7);
-  bodyShapeF();
+  //bodyShapeF();
+  
+  //PANT FRONT
+  drawPantPointsF();
+  pantShapeF();
   popMatrix();
 
-  //pant back
+  // back
   pushMatrix();
   translateScale (30, 8);
-  drawBodyPointsB();
+  
+  //BODY BACK
+  //drawBodyPointsB();
   drawBezier(b21, cp3, cp4, b19);
-  bodyShapeB();
+//bodyShapeB();
+  
+  // PANT BACK
+  drawPantPointsB();
+  pantShapeB();
   popMatrix();
 }
 

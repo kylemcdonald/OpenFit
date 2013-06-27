@@ -39,6 +39,11 @@ void bodyPointsF() {
   cp2 = cp1.get();
   cp2.y -= 3.;
   cp2.x -= 0.5; // add .25 if large size
+  // if "long" (curr. defined as 9) crotch length front, scoot control points
+  if (crotchLengthFront > 9) {
+    cp1.x -= .333333333; 
+    cp2.x -= .33333333;
+  }
   // b7 (hip point in the center front begins at the control point and is extended until crotchLengthFront
   b7 = cp2.get();
   while (bezierLength (b9, cp1, cp2, b7)< crotchLengthFront) {
@@ -90,10 +95,14 @@ void bodyPointsB() {
   b21.x += thighBack;
   // control points for crotch curve are all in relation to inner thigh point (b21)
   cp3 = b21.get();
-  cp3.x -= 4; // add .25 if large size
+  cp3.x -= 4; 
   cp4 = cp3.get();
   cp4.y -= 4.;
-  //cp4.x -= 0.25; add this line if large size
+  // if "long" (curr. defined as 21) crotch length, scoot control points
+  if (crotchLength > 21) {
+    cp3.x -= .5; 
+    cp4.x -= .5;
+  }
   // b19 (hip point in the center front begins at the control point and is extended until crotchLengthBack
   b19 = cp4.get();
   while (bezierLength (b21, cp3, cp4, b19)< crotchLengthBack) {
@@ -136,3 +145,66 @@ void bodyPointsB() {
   b24 = b13.get();
   b24.x += ankleBack;
 }
+
+void pantPointsF() {
+  // pant points are using same control points as body
+  p1 = b1.get();
+  p1.x -= ankleEase/4.;
+  p1.y += hemHeight;
+  p12 = b12.get();
+  p12.x += ankleEase/4.;
+  p12.y += hemHeight; 
+  p2 = b2.get();
+  p2.x -= calfEase/4.;
+  p11 = b11.get();
+  p11.x += calfEase/4.;
+  p3 = b3.get();
+  p3.x -= kneeEase/4.;
+  p10 = b10.get();
+  p10.x += kneeEase/4.;
+  //midthigh points shouldn't affect shape too much-- will cause peaking
+  p3a = b3a.get();
+  p9a = b9a.get();   
+  p4 = b4.get();
+  p4.x -= thighEase/2.;
+  p5 = b5.get();
+  p5.x -= buttEase/4.;
+  p6 = b6.get(); 
+  p6.x -= hipEase/4.;
+  // keep crotch curve as is
+  p7 = b7.get();
+  p8 = b8.get();
+  p9 = b9.get();
+}
+
+void pantPointsB() {
+  // pant points are using same control points as body
+  p13 = b13.get();
+  p13.x -= ankleEase/4.;
+  p13.y += hemHeight;
+  p24 = b24.get();
+  p24.x += ankleEase/4.;
+  p24.y += hemHeight; 
+  p14 = b14.get();
+  p14.x -= calfEase/4.;
+  p23 = b23.get();
+  p23.x += calfEase/4.;
+  p15 = b15.get();
+  p15.x -= kneeEase/4.;
+  p22 = b22.get();
+  p22.x += kneeEase/4.;
+  //midthigh points shouldn't affect shape too much-- will cause peaking
+  p15a = b15a.get();
+  p21a = b21a.get();   
+  p16 = b16.get();
+  p16.x -= thighEase/2.;
+  p17 = b17.get();
+  p17.x -= buttEase/4.;
+  p18 = b18.get(); 
+  p18.x -= hipEase/4.;
+  // keep crotch curve as is
+  p19 = b19.get();
+  p20 = b20.get();
+  p21 = b21.get();
+}
+
