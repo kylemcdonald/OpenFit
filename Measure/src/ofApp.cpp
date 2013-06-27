@@ -1,6 +1,13 @@
 #include "ofApp.h"
 #include "Geometry.h"
 
+/*
+ for the ankle, the height should be the lowest point of the bounding box in
+ either of the views.
+ sideseam / hip height should be measured from the center of the hips on the side
+ view.
+ */
+
 bool saveToJson = false;
 float colorAlpha = 128;
 float backgroundThreshold = 1300;
@@ -8,19 +15,19 @@ float hipSide = 56;
 float ankleSide = 420;
 float ankleFront = 438;
 float hipFront = 90;
-float calf = .25;
-float knee = .40;
-float midthigh = .67;
-float thigh = .75;
-float butt = .90;
-float hipSlope = .32;
+float calf = .25; //.24
+float knee = .40; // .39
+float midthigh = .67; // .67
+float thigh = .75; // .75
+float butt = .90; // .90
+float hipSlope = .32; // .32
 float center = 261;
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
 
-ofVec3f floor1(576, 444),
-floor2(585, 473),
-floor3(16, 464);
+ofVec3f floor1(569, 406),
+floor2(576, 444),
+floor3(112, 416);
 
 float millimetersToInches(float millimeters) {
 	return millimeters * 0.0393701;
@@ -206,11 +213,15 @@ void ofApp::analyze() {
 	}
 	
 	crotch.clear();
-	crotch.addVertex(sideEdges[6].first);
-	crotch.addVertex(sideEdges[5].first);
-	crotch.addVertex(sideEdges[4].second);
-	crotch.addVertex(sideEdges[5].second);
-	crotch.addVertex(sideEdges[6].second);
+	
+	crotch.curveTo(sideEdges[6].first);
+	crotch.curveTo(sideEdges[6].first);
+	crotch.curveTo(sideEdges[5].first);
+	ofVec2f thighMidpoint = (sideEdges[4].first + sideEdges[4].second) / 2;
+	crotch.curveTo(thighMidpoint);
+	crotch.curveTo(sideEdges[5].second);
+	crotch.curveTo(sideEdges[6].second);
+	crotch.curveTo(sideEdges[6].second);
 	
 	float crotchDepth = 0;
 	// should use points instead of depths
@@ -231,6 +242,7 @@ void ofApp::setupGui() {
 	gui->addLabelButton("Save to JSON", &saveToJson);
 	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
 	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
+	gui->addSlider("Center", 0, 640, &center);
 	gui->addSlider("Hip (front)", 0, 640, &hipFront);
 	gui->addSlider("Hip (side)", 0, 640, &hipSide);
 	gui->addSlider("Ankle (front)", 0, 640, &ankleFront);
@@ -241,10 +253,9 @@ void ofApp::setupGui() {
 	gui->addSlider("Thigh", 0, 1, &thigh);
 	gui->addSlider("Butt", 0, 1, &butt);
 	gui->addSlider("Hip slope", -1, 1, &hipSlope);
-	gui->addSlider("Center", 0, 640, &center);
-	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 200, 150);
-	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 200, 150);
-	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 200, 150);
+	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 100, 75);
+	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 100, 75);
+	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
 	gui->autoSizeToFitWidgets();
 }
 
@@ -256,17 +267,17 @@ void ofApp::update() {
 		file << "\t\"ankle\" : " << millimetersToInches(circumferences[0]) << "," << endl;
 		file << "\t\"calf\" : " << millimetersToInches(circumferences[1]) << "," << endl;
 		file << "\t\"knee\" : " << millimetersToInches(circumferences[2]) << "," << endl;
-		file << "\t\"thigh\" : " << millimetersToInches(circumferences[3]) << "," << endl;
-		file << "\t\"midthigh\" : " << millimetersToInches(circumferences[4]) << "," << endl;
+		file << "\t\"midthigh\" : " << millimetersToInches(circumferences[3]) << "," << endl;
+		file << "\t\"thigh\" : " << millimetersToInches(circumferences[4]) << "," << endl;
 		file << "\t\"butt\" : " << millimetersToInches(circumferences[5]) << "," << endl;
 		file << "\t\"hip\" : " << millimetersToInches(circumferences[6]) << "," << endl;
-		file << "\t\"crotchLength\" : " << crotchLength << "," << endl;
+		file << "\t\"crotchLength\" : " << millimetersToInches(crotchLength) << "," << endl;
 		file << "\t\"hipSlope\" : " << hipSlope << "," << endl;
 		file << "\t\"ankleToFloor\" : " << millimetersToInches(heights[0]) << "," << endl;
 		file << "\t\"calfToFloor\" : " << millimetersToInches(heights[1]) << "," << endl;
 		file << "\t\"kneeToFloor\" : " << millimetersToInches(heights[2]) << "," << endl;
-		file << "\t\"thighToFloor\" : " << millimetersToInches(heights[3]) << "," << endl;
-		file << "\t\"midthighToFloor\" : " << millimetersToInches(heights[4]) << "," << endl;
+		file << "\t\"midthighToFloor\" : " << millimetersToInches(heights[3]) << "," << endl;
+		file << "\t\"thighToFloor\" : " << millimetersToInches(heights[4]) << "," << endl;
 		file << "\t\"buttToFloor\" : " << millimetersToInches(heights[5]) << "," << endl;
 		file << "\t\"hipToFloor\" : " << millimetersToInches(heights[6]) << endl;
 		file << "}" << endl;
