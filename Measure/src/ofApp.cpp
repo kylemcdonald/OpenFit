@@ -208,8 +208,6 @@ void ofApp::analyze() {
 		float perimeterRectangle = 2 * (front + side);
 		float circumference = ofLerp(perimeterEllipse, perimeterRectangle, rectangularity[i]);
 		circumferences.push_back(circumference);
-		//cout << names[i] << ": " << front << "mm x " << side << "mm = " << circumference << "mm" << endl;
-		//cout << names[i] << ": " << millimetersToInches(front) << "in x " << millimetersToInches(side) << "in = " << millimetersToInches(circumference) << "in" << endl;
 	}
 	
 	crotch.clear();
