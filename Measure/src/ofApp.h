@@ -18,6 +18,7 @@ public:
 	void draw();
 	void keyPressed(int key);
 	
+	void buildMask(ofImage& mask, ofImage& color, ofShortImage& depth);
 	float measureSegment(int y, ofShortImage& depth, ofImage& mask,
 											 int leftBoundary, int rightBoundary,
 											 ofVec3f& leftEdge, ofVec3f& rightEdge,

@@ -10,9 +10,9 @@ cv::Mat depthMask, meanShiftMat, fg, bg, markers8u, hsvBuffer;
 bool useMeanShift = false;
 
 float
-hueCenter = 55,
-hueRange = 25,
-svPadding = 35,
+hueCenter = 54,
+hueRange = 24,
+svPadding = 10,
 backgroundErode = 8,
 foregroundDilate = 2,
 foregroundErode = 8,
@@ -65,6 +65,7 @@ void testApp::update() {
 	inRange(hsvBuffer, lowerb, upperb, fg);
 	
 	Mat depthMat = toCv(depth);
+	// you can remove the & (depthMat > 0) if you want to use color info from no-depth areas 
 	depthMask = (depthMat < depthThreshold) & (depthMat > 0);
 	fg = fg & depthMask;
 	bg = ~fg;
