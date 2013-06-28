@@ -2,21 +2,20 @@
 #include "Geometry.h"
 
 /*
- for the ankle, the height should be the lowest point of the bounding box in
- either of the views. likewise, the opposite for the hips.
  show floor points without depth data as magenta
+ 
  the center of the side view should be taken as the depth for the front, and
  the center of the front view should be taken as the depth for the side.
  
  - should visualize fg/bg
- - auto center
- - capture images from kinect
+ - run a contour finder on the masks, use bounding box to set ankles and hips,
+ use centroid instead of calculating it manually
  */
 
 bool saveToJson = false,
-useMeanShift = false,
-sampleSide = true,
-sampleFront = false;
+sampleSide = false,
+sampleFront = false,
+useKinect = false;
 
 float
 hueCenter = 54,
@@ -39,8 +38,9 @@ knee = .40, // .39
 midthigh = .67, // .67
 thigh = .75, // .75
 butt = .90, // .90
-hipSlope = .32, // .32
-center = 261;
+hipSlope = .32; // .32
+
+ofVec2f centroid;
 
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
@@ -82,10 +82,18 @@ ofPolyline ofApp::ConvertProjectiveToRealWorld(const ofPolyline& polyline, float
 	return result;
 }
 
-ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position) {
+ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position, int radius) {
 	int w = depth.getWidth(), h = depth.getHeight();
 	int x = position.x, y = position.y;
-	return ConvertProjectiveToRealWorld(x, y, depth.getPixels()[w * y + x]);
+	ofVec3f result;
+	for(int j = -radius; j <= +radius; j++) {
+		for(int i = -radius; i <= +radius; i++) {
+			int cx = x + i, cy = y + j;
+			result += ConvertProjectiveToRealWorld(x, y, depth.getPixels()[w * cy + cx]);
+		}
+	}
+	int side = radius * 2 + 1;
+	return result / (side * side);
 }
 
 void ofApp::setup() {
@@ -93,9 +101,9 @@ void ofApp::setup() {
 	
 	colorFront.loadImage("color-front.png");
 	depthFront.loadImage("depth-front.png");
-	
 	colorSide.loadImage("color-side.png");
 	depthSide.loadImage("depth-side.png");
+	updateMeanShift();
 	
 	setupGui();
 }
@@ -114,7 +122,7 @@ float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 	for(int x = leftBoundary; x < rightBoundary; x++) {
 		int j;
 		int cury = y;
-		if(foundLeft) {
+		if(slope != 0 && foundLeft) {
 			cury = y + (x - leftEdge.x) * -slope;
 		}
 		if(cury < 0 || cury >= h) {
@@ -140,17 +148,8 @@ float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 	return leftPoint.distance(rightPoint);
 }
 
-cv::Mat depthMask, meanShiftMat, fg, bg, markers8u, hsvBuffer;
-void ofApp::buildMask(ofImage& mask, ofImage& color, ofShortImage& depth) {
-	Mat colorMat = toCv(color);
-	Mat img;
-	if(useMeanShift) {
-		pyrMeanShiftFiltering(colorMat, meanShiftMat, spatialRadius, colorRadius, pyramidLevels);
-		img = meanShiftMat;
-	} else {
-		img = colorMat;
-	}
-	
+cv::Mat depthMask, fg, bg, markers8u, hsvBuffer;
+void ofApp::buildMask(ofImage& mask, Mat& img, ofShortImage& depth) {
 	cvtColor(img, hsvBuffer, CV_RGB2HSV);
 	Scalar lowerb(hueCenter - hueRange, svPadding, svPadding);
 	Scalar upperb(hueCenter + hueRange, 255 - svPadding, 255 - svPadding);
@@ -170,20 +169,43 @@ void ofApp::buildMask(ofImage& mask, ofImage& color, ofShortImage& depth) {
 	markers.setTo(2, fg);
 	watershed(img, markers);
 	
-	imitate(mask, color, CV_8UC1);
+	imitate(mask, depth, CV_8UC1);
 	Mat maskMat = toCv(mask);
 	markers.convertTo(maskMat, CV_8UC1, 255, -255);
 }
 
+Mat meanShiftFront, meanShiftSide;
+void ofApp::updateMeanShift() {
+	Mat colorFrontMat = toCv(colorFront);
+	pyrMeanShiftFiltering(colorFrontMat, meanShiftFront, spatialRadius, colorRadius, pyramidLevels);
+	Mat colorSideMat = toCv(colorSide);
+	pyrMeanShiftFiltering(colorSideMat, meanShiftSide, spatialRadius, colorRadius, pyramidLevels);
+}
+	
 void ofApp::analyze() {
-	buildMask(maskFront, colorFront, depthFront);
+	buildMask(maskFront, meanShiftFront, depthFront);
 	maskFront.update();
-	buildMask(maskSide, colorSide, depthSide);
+	buildMask(maskSide, meanShiftSide, depthSide);
 	maskSide.update();
 	
-	ofVec3f f1 = sampleDepth(depthFront, floor1);
-	ofVec3f f2 = sampleDepth(depthFront, floor2);
-	ofVec3f f3 = sampleDepth(depthFront, floor3);
+	centroid = ofVec2f();
+	int centroidCount = 0;
+	int w = maskFront.getWidth(), h = maskFront.getHeight();
+	unsigned char* maskFrontPixels = maskFront.getPixels();
+	for(int y = 0; y < h; y++) {
+		for(int x = 0; x < w; x++) {
+			int i = y * w + x;
+			if(maskFrontPixels[i]) {
+				centroid += ofVec2f(x, y);
+				centroidCount++;
+			}
+		}
+	}
+	centroid /= centroidCount;
+	
+	ofVec3f f1 = sampleDepth(depthFront, floor1, 2);
+	ofVec3f f2 = sampleDepth(depthFront, floor2, 2);
+	ofVec3f f3 = sampleDepth(depthFront, floor3, 2);
 	ofVec3f floorNormal = getNormal(f1, f2, f3);
 	
 	vector<string> names;
@@ -220,25 +242,19 @@ void ofApp::analyze() {
 		if(torso[i]) {
 			front = measureSegment(y, depthFront, maskFront, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			if(sampleFront) {
-				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-				heightCount += 2;
-			}
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			heightCount += 2;
 		} else {
-			front = measureSegment(y, depthFront, maskFront, 0, center, leftEdge, rightEdge, leftPoint, rightPoint);
+			front = measureSegment(y, depthFront, maskFront, 0, centroid.x, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			if(sampleFront) {
-				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-			}
-			front += measureSegment(y, depthFront, maskFront, center, 640, leftEdge, rightEdge, leftPoint, rightPoint);
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			front += measureSegment(y, depthFront, maskFront, centroid.x, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			if(sampleFront) {
-				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-				heightCount += 4;
-			}
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			heightCount += 4;
 			front /= 2;
 		}
 		
@@ -251,11 +267,9 @@ void ofApp::analyze() {
 		sideEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 		depths.push_back(leftPoint.z);
 		
-		if(sampleSide) {
-			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-			heightCount += 2;
-		}
+		height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+		height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+		heightCount += 2;
 		heights.push_back(height / heightCount);
 		
 		float perimeterEllipse = perimeterOfEllipse(front / 2, side / 2);
@@ -293,10 +307,10 @@ void ofApp::setupGui() {
 	gui->addFPS();
 	gui->addSpacer();
 	gui->addLabelButton("Save to JSON", &saveToJson);
-	gui->addToggle("Sample front", &sampleFront);
-	gui->addToggle("Sample side", &sampleSide);
+	gui->addLabelToggle("Use Kinect", &useKinect);
+	gui->addButton("Sample front", &sampleFront);
+	gui->addButton("Sample side", &sampleSide);
 	gui->addMinimalSlider("Background threshold", 0, 5000, &backgroundThreshold);
-	gui->addMinimalSlider("Center", 0, 640, &center);
 	gui->addMinimalSlider("Hip (front)", 0, 640, &hipFront);
 	gui->addMinimalSlider("Hip (side)", 0, 640, &hipSide);
 	gui->addMinimalSlider("Ankle (front)", 0, 640, &ankleFront);
@@ -308,11 +322,6 @@ void ofApp::setupGui() {
 	gui->addMinimalSlider("Midthigh", 0, 1, &midthigh);
 	gui->addMinimalSlider("Thigh", 0, 1, &thigh);
 	gui->addMinimalSlider("Butt", 0, 1, &butt);
-	
-	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 100, 75);
-	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 100, 75);
-	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
-	
 	gui->addMinimalSlider("Color alpha", 0, 255, &colorAlpha);
 	gui->addMinimalSlider("Hue center", 0, 255, &hueCenter);
 	gui->addMinimalSlider("Hue range", 0, 255, &hueRange);
@@ -320,15 +329,39 @@ void ofApp::setupGui() {
 	gui->addMinimalSlider("Background erode", 1, 16, &backgroundErode);
 	gui->addMinimalSlider("Foreground dilate", 1, 8, &foregroundDilate);
 	gui->addMinimalSlider("Foreground erode", 1, 16, &foregroundErode);
-	gui->addLabelToggle("Use Mean Shift", &useMeanShift);
-	gui->addMinimalSlider("Pyramid levels", 0, 6, &pyramidLevels);
-	gui->addMinimalSlider("Spatial radius", 1, 64, &spatialRadius);
-	gui->addMinimalSlider("Color radius", 1, 128, &colorRadius);
+	//gui->addMinimalSlider("Pyramid levels", 0, 6, &pyramidLevels);
+	//gui->addMinimalSlider("Spatial radius", 1, 64, &spatialRadius);
+	//gui->addMinimalSlider("Color radius", 1, 128, &colorRadius);
+	
+	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 100, 75);
+	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 100, 75);
+	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
 	
 	gui->autoSizeToFitWidgets();
 }
 
 void ofApp::update() {
+	if(useKinect && !kinect.isConnected()) {
+		kinect.setRegistration(true);
+		kinect.init();
+		kinect.open();
+	}
+	kinect.update();
+	if(kinect.isFrameNew()) {
+		if(sampleFront) {
+			copy(kinect.getPixelsRef(), colorFront);
+			copy(kinect.getRawDepthPixelsRef(), depthFront);
+			colorFront.update();
+			sampleFront = false;
+			updateMeanShift();
+		} else if(sampleSide) {
+			copy(kinect.getPixelsRef(), colorSide);
+			copy(kinect.getRawDepthPixelsRef(), depthSide);
+			colorSide.update();
+			sampleSide = false;
+			updateMeanShift();
+		}
+	}
 	analyze();
 	if(saveToJson) {
 		ofFile file("measurements.json", ofFile::WriteOnly);
@@ -358,6 +391,14 @@ void ofApp::draw() {
 	ofBackground(0);
 	
 	ofSetColor(255);
+	if(useKinect) {
+		kinect.draw(0, 0);
+		kinect.drawDepth(0, 480);
+	}
+	
+	ofPushMatrix();
+	ofTranslate(640, 0);
+	
 	maskFront.draw(0, 0);	
 	ofPushStyle();
 	ofSetColor(255, colorAlpha);
@@ -378,7 +419,8 @@ void ofApp::draw() {
 		ofLine(0, y, 640, y);
 		MiniFont::drawHighlight(names[i], 540, y);
 	}
-	ofLine(center, 0, center, 480);
+	ofLine(centroid.x, 0, centroid.x, 480);
+	MiniFont::drawHighlight("centroid", centroid.x, 0);
 	for(int i = 0; i < frontEdges.size(); i++) {
 		ofSetColor(0);
 		ofLine(frontEdges[i].first, frontEdges[i].second);
@@ -427,8 +469,10 @@ void ofApp::draw() {
 	
 	ofSetColor(magentaPrint);
 	crotch.draw();
-	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotch.getCentroid2D());
+	ofVec2f crotchLabelPosition = (sideEdges[4].first + sideEdges[4].second + sideEdges[5].first + sideEdges[5].second) / 4;
+	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotchLabelPosition);
 	
+	ofPopMatrix();
 	ofPopMatrix();
 }
 
@@ -441,5 +485,14 @@ void ofApp::keyPressed(int key) {
 	}
 	if(key == 'l') {
 		gui->loadSettings("settings.xml");
+	}
+	if(key == '1') {
+		floor1.set(mouseX, mouseY);
+	}
+	if(key == '2') {
+		floor2.set(mouseX, mouseY);
+	}
+	if(key == '3') {
+		floor3.set(mouseX, mouseY);
 	}
 }

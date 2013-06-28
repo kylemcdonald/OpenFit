@@ -13,12 +13,13 @@ class ofApp : public ofBaseApp {
 public:
 	void setup();
 	void setupGui();
+	void updateMeanShift();
 	void analyze();
 	void update();
 	void draw();
 	void keyPressed(int key);
 	
-	void buildMask(ofImage& mask, ofImage& color, ofShortImage& depth);
+	void buildMask(ofImage& mask, Mat& color, ofShortImage& depth);
 	float measureSegment(int y, ofShortImage& depth, ofImage& mask,
 											 int leftBoundary, int rightBoundary,
 											 ofVec3f& leftEdge, ofVec3f& rightEdge,
@@ -27,7 +28,7 @@ public:
 	ofVec3f ConvertProjectiveToRealWorld(const ofVec3f& point);
 	ofVec3f ConvertProjectiveToRealWorld(float x, float y, float z);
 	ofPolyline ConvertProjectiveToRealWorld(const ofPolyline& polyline, float z);
-	ofVec3f sampleDepth(ofShortImage& depth, ofVec2f position);
+	ofVec3f sampleDepth(ofShortImage& depth, ofVec2f position, int radius = 0);
 	
 	ofxUICanvas* gui;	
 	ofEasyCam cam;
@@ -43,4 +44,6 @@ public:
 	
 	ofPolyline crotch;
 	float crotchLength;
+	
+	ofxKinect kinect;
 };
