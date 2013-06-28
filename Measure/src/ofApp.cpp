@@ -3,14 +3,20 @@
 
 /*
  for the ankle, the height should be the lowest point of the bounding box in
- either of the views.
- sideseam / hip height should be measured from the center of the hips on the side
- view.
- center can be calculated automatically very easily
+ either of the views. likewise, the opposite for the hips.
  show floor points without depth data as magenta
+ the center of the side view should be taken as the depth for the front, and
+ the center of the front view should be taken as the depth for the side.
+ 
+ - should visualize fg/bg
+ - auto center
+ - capture images from kinect
  */
 
-bool useMeanShift = false;
+bool saveToJson = false,
+useMeanShift = false,
+sampleSide = true,
+sampleFront = false;
 
 float
 hueCenter = 54,
@@ -21,22 +27,21 @@ foregroundDilate = 2,
 foregroundErode = 8,
 pyramidLevels = 3,
 spatialRadius = 10,
-colorRadius = 25;
+colorRadius = 25,
+colorAlpha = 128,
+backgroundThreshold = 1300,
+hipSide = 56,
+ankleSide = 420,
+ankleFront = 438,
+hipFront = 90,
+calf = .25, //.24
+knee = .40, // .39
+midthigh = .67, // .67
+thigh = .75, // .75
+butt = .90, // .90
+hipSlope = .32, // .32
+center = 261;
 
-bool saveToJson = false;
-float colorAlpha = 128;
-float backgroundThreshold = 1300;
-float hipSide = 56;
-float ankleSide = 420;
-float ankleFront = 438;
-float hipFront = 90;
-float calf = .25; //.24
-float knee = .40; // .39
-float midthigh = .67; // .67
-float thigh = .75; // .75
-float butt = .90; // .90
-float hipSlope = .32; // .32
-float center = 261;
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
 
@@ -48,8 +53,12 @@ float millimetersToInches(float millimeters) {
 	return millimeters * 0.0393701;
 }
 
-const float FovX = 1.0144686707507438;
-const float FovY = 0.78980943449644714;
+// depth
+// const float FovX = 1.0144686707507438; // 58.12
+// const float FovY = 0.78980943449644714; // 45.25
+// color, http://msdn.microsoft.com/en-us/library/hh855368
+const float FovX = 1.08210413624; // 62.0
+const float FovY = 0.84823001646; // 48.6
 const float XtoZ = tanf(FovX / 2) * 2;
 const float YtoZ = tanf(FovY / 2) * 2;
 const unsigned int Xres = 640;
@@ -195,7 +204,7 @@ void ofApp::analyze() {
 	// some parts of the leg / torso are more elliptical, others are more rectangular,
 	// and the perimeter between an ellipse and rectangle are very different,
 	// so we calculate both and pick an inbetween value.
-	float rectangularity[] = {0, .33, .25, .4, .35, .68, .3};
+	float rectangularity[] = {.27, .24, .33, .15, .10, .25, .20};
 	frontEdges.clear();
 	sideEdges.clear();
 	heights.clear();
@@ -206,27 +215,32 @@ void ofApp::analyze() {
 		ofVec3f leftPoint, rightPoint;
 		ofVec3f leftEdge, rightEdge;
 		float height = 0;
-		float front;
+		int heightCount = 0;
+		float front = 0;
 		if(torso[i]) {
 			front = measureSegment(y, depthFront, maskFront, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-			height /= 2;
+			if(sampleFront) {
+				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+				heightCount += 2;
+			}
 		} else {
 			front = measureSegment(y, depthFront, maskFront, 0, center, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			if(sampleFront) {
+				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			}
 			front += measureSegment(y, depthFront, maskFront, center, 640, leftEdge, rightEdge, leftPoint, rightPoint);
 			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
-			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
-			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
-			height /= 4;
+			if(sampleFront) {
+				height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+				height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+				heightCount += 4;
+			}
 			front /= 2;
 		}
-		
-		heights.push_back(height);
 		
 		y = ofMap(y, ankleFront, hipFront, ankleSide, hipSide);
 		float slope = 0;
@@ -236,6 +250,13 @@ void ofApp::analyze() {
 		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint, slope);
 		sideEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 		depths.push_back(leftPoint.z);
+		
+		if(sampleSide) {
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			heightCount += 2;
+		}
+		heights.push_back(height / heightCount);
 		
 		float perimeterEllipse = perimeterOfEllipse(front / 2, side / 2);
 		float perimeterRectangle = 2 * (front + side);
@@ -266,42 +287,43 @@ void ofApp::analyze() {
 
 void ofApp::setupGui() {
 	gui = new ofxUICanvas();
+	gui->setTheme(OFX_UI_THEME_MINBLACK);
 	gui->addLabel("Measure");
 	gui->addSpacer();
 	gui->addFPS();
 	gui->addSpacer();
 	gui->addLabelButton("Save to JSON", &saveToJson);
-	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
-	gui->addSlider("Center", 0, 640, &center);
-	gui->addSlider("Hip (front)", 0, 640, &hipFront);
-	gui->addSlider("Hip (side)", 0, 640, &hipSide);
-	gui->addSlider("Ankle (front)", 0, 640, &ankleFront);
-	gui->addSlider("Ankle (side)", 0, 640, &ankleSide);
-	gui->addSlider("Hip slope", -1, 1, &hipSlope);
+	gui->addToggle("Sample front", &sampleFront);
+	gui->addToggle("Sample side", &sampleSide);
+	gui->addMinimalSlider("Background threshold", 0, 5000, &backgroundThreshold);
+	gui->addMinimalSlider("Center", 0, 640, &center);
+	gui->addMinimalSlider("Hip (front)", 0, 640, &hipFront);
+	gui->addMinimalSlider("Hip (side)", 0, 640, &hipSide);
+	gui->addMinimalSlider("Ankle (front)", 0, 640, &ankleFront);
+	gui->addMinimalSlider("Ankle (side)", 0, 640, &ankleSide);
+	gui->addMinimalSlider("Hip slope", -1, 1, &hipSlope);
 	gui->addSpacer();
-	gui->addSlider("Calf", 0, 1, &calf);
-	gui->addSlider("Knee", 0, 1, &knee);
-	gui->addSlider("Midthigh", 0, 1, &midthigh);
-	gui->addSlider("Thigh", 0, 1, &thigh);
-	gui->addSlider("Butt", 0, 1, &butt);
+	gui->addMinimalSlider("Calf", 0, 1, &calf);
+	gui->addMinimalSlider("Knee", 0, 1, &knee);
+	gui->addMinimalSlider("Midthigh", 0, 1, &midthigh);
+	gui->addMinimalSlider("Thigh", 0, 1, &thigh);
+	gui->addMinimalSlider("Butt", 0, 1, &butt);
 	
-	/*
 	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 100, 75);
 	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 100, 75);
 	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
-	 */
 	
-	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
-	gui->addSlider("Hue center", 0, 255, &hueCenter);
-	gui->addSlider("Hue range", 0, 255, &hueRange);
-	gui->addSlider("Saturation/Value padding", 0, 255, &svPadding);
-	gui->addSlider("Background erode", 1, 16, &backgroundErode);
-	gui->addSlider("Foreground dilate", 1, 8, &foregroundDilate);
-	gui->addSlider("Foreground erode", 1, 16, &foregroundErode);
+	gui->addMinimalSlider("Color alpha", 0, 255, &colorAlpha);
+	gui->addMinimalSlider("Hue center", 0, 255, &hueCenter);
+	gui->addMinimalSlider("Hue range", 0, 255, &hueRange);
+	gui->addMinimalSlider("Saturation/Value padding", 0, 255, &svPadding);
+	gui->addMinimalSlider("Background erode", 1, 16, &backgroundErode);
+	gui->addMinimalSlider("Foreground dilate", 1, 8, &foregroundDilate);
+	gui->addMinimalSlider("Foreground erode", 1, 16, &foregroundErode);
 	gui->addLabelToggle("Use Mean Shift", &useMeanShift);
-	gui->addSlider("Pyramid levels", 0, 6, &pyramidLevels);
-	gui->addSlider("Spatial radius", 1, 64, &spatialRadius);
-	gui->addSlider("Color radius", 1, 128, &colorRadius);
+	gui->addMinimalSlider("Pyramid levels", 0, 6, &pyramidLevels);
+	gui->addMinimalSlider("Spatial radius", 1, 64, &spatialRadius);
+	gui->addMinimalSlider("Color radius", 1, 128, &colorRadius);
 	
 	gui->autoSizeToFitWidgets();
 }
