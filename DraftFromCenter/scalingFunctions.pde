@@ -20,4 +20,3 @@ void bezierVertexScale (PVector a, PVector b, PVector c) {
   c.x*drawingScale, c.y*drawingScale);
 }
 
-
