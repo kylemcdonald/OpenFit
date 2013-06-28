@@ -64,7 +64,7 @@ void ofApp::setupGui() {
 	gui->addRadio("Select plane", planes);
 	
 	gui->addLabelToggle("Show Kinect", &showKinect);
-	gui->addLabelButton("Save Frame", &saveFrame);
+	gui->addLabelToggle("Save Frame", &saveFrame);
 	gui->autoSizeToFitWidgets();
 }
 
@@ -96,6 +96,7 @@ void ofApp::update() {
 			string frame = ofToString(savedFrames++);
 			ofSaveImage(kinect.getRawDepthPixelsRef(), frame + "-depth.png");
 			ofSaveImage(kinect.getPixelsRef(), frame + "-color.png");
+			saveFrame = false;
 		}
 	}
 }

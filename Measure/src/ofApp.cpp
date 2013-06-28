@@ -2,54 +2,71 @@
 #include "Geometry.h"
 
 /*
- 2 vertical planes - one that splits the crotch, one that divides front and back
+ show floor points without depth data as magenta
  
- horizontal planes
- d6 = floor
- d5 = ankle, at skinniest part
- d6 = calf, at widest part
- d3 = knee, where that bone bulges on the inside
- d2 = thigh, at the top by the crotch
- d2a = "midthigh", 3 inch below thigh (nice control point for inner leg curve)
- d1= "butt", widest part
+ the center of the side view should be taken as the depth for the front, and
+ the center of the front view should be taken as the depth for the side.
  
- - - --
- 
- last plane, hip, is tilted forward, and butt-to-hip vertical measurements are taken for F, S, & B.
- need to measure the crotch length
- 
+ - should visualize fg/bg
+ - run a contour finder on the masks, use bounding box to set ankles and hips,
+ use centroid instead of calculating it manually
  */
 
-bool useCurvedCrotch = false;
-float colorAlpha = 128;
-float backgroundThreshold = 1300;
-float ankle = 438;
-float calf = 360;
-float knee = 290;
-float thigh = 170;
-float midthigh = 208;
-float butt = 134;
-float hip = 90;
-float center = 261;
-float hipSide = 56;
-float ankleSide = 420;
+bool saveToJson = false,
+sampleSide = false,
+sampleFront = false,
+useKinect = false;
+
+float
+hueCenter = 54,
+hueRange = 24,
+svPadding = 10,
+backgroundErode = 8,
+foregroundDilate = 2,
+foregroundErode = 8,
+pyramidLevels = 3,
+spatialRadius = 10,
+colorRadius = 25,
+colorAlpha = 128,
+backgroundThreshold = 1300,
+hipSide = 56,
+ankleSide = 420,
+ankleFront = 438,
+hipFront = 90,
+calf = .25, //.24
+knee = .40, // .39
+midthigh = .67, // .67
+thigh = .75, // .75
+butt = .90, // .90
+hipSlope = .32; // .32
+
+ofVec2f centroid;
+
 ofVec3f orientation;
 ofxUIRadio* selectPlane;
 
-ofVec3f floor1(576, 444),
-floor2(585, 473),
-floor3(16, 464);
+ofVec3f floor1(569, 406),
+floor2(576, 444),
+floor3(112, 416);
 
 float millimetersToInches(float millimeters) {
 	return millimeters * 0.0393701;
 }
 
-const float FovX = 1.0144686707507438;
-const float FovY = 0.78980943449644714;
+// depth
+// const float FovX = 1.0144686707507438; // 58.12
+// const float FovY = 0.78980943449644714; // 45.25
+// color, http://msdn.microsoft.com/en-us/library/hh855368
+const float FovX = 1.08210413624; // 62.0
+const float FovY = 0.84823001646; // 48.6
 const float XtoZ = tanf(FovX / 2) * 2;
 const float YtoZ = tanf(FovY / 2) * 2;
 const unsigned int Xres = 640;
 const unsigned int Yres = 480;
+
+ofVec3f ofApp::ConvertProjectiveToRealWorld(const ofVec3f& point) {
+	return ConvertProjectiveToRealWorld(point.x, point.y, point.z);
+}
 
 ofVec3f ofApp::ConvertProjectiveToRealWorld(float x, float y, float z) {
 	return ofVec3f((x / Xres - .5f) * z * XtoZ,
@@ -65,10 +82,18 @@ ofPolyline ofApp::ConvertProjectiveToRealWorld(const ofPolyline& polyline, float
 	return result;
 }
 
-ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position) {
+ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position, int radius) {
 	int w = depth.getWidth(), h = depth.getHeight();
 	int x = position.x, y = position.y;
-	return ConvertProjectiveToRealWorld(x, y, depth.getPixels()[w * y + x]);
+	ofVec3f result;
+	for(int j = -radius; j <= +radius; j++) {
+		for(int i = -radius; i <= +radius; i++) {
+			int cx = x + i, cy = y + j;
+			result += ConvertProjectiveToRealWorld(x, y, depth.getPixels()[w * cy + cx]);
+		}
+	}
+	int side = radius * 2 + 1;
+	return result / (side * side);
 }
 
 void ofApp::setup() {
@@ -76,77 +101,122 @@ void ofApp::setup() {
 	
 	colorFront.loadImage("color-front.png");
 	depthFront.loadImage("depth-front.png");
-	maskFront.loadImage("mask-front.png");
-	maskFront.setImageType(OF_IMAGE_GRAYSCALE);
-	
 	colorSide.loadImage("color-side.png");
 	depthSide.loadImage("depth-side.png");
-	maskSide.loadImage("mask-side.png");
-	maskSide.setImageType(OF_IMAGE_GRAYSCALE);
+	updateMeanShift();
 	
 	setupGui();
 }
 
 float ofApp::measureSegment(int y, ofShortImage& depth, ofImage& mask,
 														int leftBoundary, int rightBoundary,
-														int& leftEdge, int& rightEdge,
-														ofVec3f& leftPoint, ofVec3f& rightPoint) {
+														ofVec3f& leftEdge, ofVec3f& rightEdge,
+														ofVec3f& leftPoint, ofVec3f& rightPoint,
+														float slope) {
 	unsigned short farthest = 0;
-	leftEdge = 0, rightEdge = 0;
+	leftEdge = ofVec3f(), rightEdge = ofVec3f();
+	bool foundLeft = false;
 	int w = depth.getWidth(), h = depth.getHeight();
 	unsigned short* depthPixels = depth.getPixels();
 	unsigned char* maskPixels = mask.getPixels();
 	for(int x = leftBoundary; x < rightBoundary; x++) {
-		int j = y * w + x;
+		int j;
+		int cury = y;
+		if(slope != 0 && foundLeft) {
+			cury = y + (x - leftEdge.x) * -slope;
+		}
+		if(cury < 0 || cury >= h) {
+			break;
+		}
+		j = cury * w + x;
 		if(maskPixels[j] == 255) {
-			unsigned short cur = depthPixels[j];
-			if(cur > farthest) {
-				farthest = cur;
+			unsigned short curDepth = depthPixels[j];
+			if(curDepth > farthest) {
+				farthest = curDepth;
 			}
-			if(leftEdge == 0) {
-				leftEdge = x;
+			if(!foundLeft) {
+				leftEdge.set(x, cury);
+				foundLeft = true;
 			}
-			rightEdge = x;
+			rightEdge.set(x, cury);
 		}
 	}
-	leftPoint.set(ConvertProjectiveToRealWorld(leftEdge, y, farthest));
-	rightPoint.set(ConvertProjectiveToRealWorld(rightEdge, y, farthest));
+	leftEdge.z = farthest;
+	rightEdge.z = farthest;
+	leftPoint.set(ConvertProjectiveToRealWorld(leftEdge));
+	rightPoint.set(ConvertProjectiveToRealWorld(rightEdge));
 	return leftPoint.distance(rightPoint);
 }
 
+cv::Mat depthMask, fg, bg, markers8u, hsvBuffer;
+void ofApp::buildMask(ofImage& mask, Mat& img, ofShortImage& depth) {
+	cvtColor(img, hsvBuffer, CV_RGB2HSV);
+	Scalar lowerb(hueCenter - hueRange, svPadding, svPadding);
+	Scalar upperb(hueCenter + hueRange, 255 - svPadding, 255 - svPadding);
+	inRange(hsvBuffer, lowerb, upperb, fg);
+	
+	Mat depthMat = toCv(depth);
+	// you can remove the & (depthMat > 0) if you want to use color info from no-depth areas 
+	depthMask = (depthMat < backgroundThreshold) & (depthMat > 0);
+	fg = fg & depthMask;
+	bg = ~fg;
+	erode(bg, (int) backgroundErode);
+	dilate(fg, (int) foregroundDilate);
+	erode(fg, (int) foregroundErode);
+	
+	Mat markers = Mat::zeros(depth.getHeight(), depth.getWidth(), CV_32SC1);
+	markers.setTo(1, bg);
+	markers.setTo(2, fg);
+	watershed(img, markers);
+	
+	imitate(mask, depth, CV_8UC1);
+	Mat maskMat = toCv(mask);
+	markers.convertTo(maskMat, CV_8UC1, 255, -255);
+}
+
+Mat meanShiftFront, meanShiftSide;
+void ofApp::updateMeanShift() {
+	Mat colorFrontMat = toCv(colorFront);
+	pyrMeanShiftFiltering(colorFrontMat, meanShiftFront, spatialRadius, colorRadius, pyramidLevels);
+	Mat colorSideMat = toCv(colorSide);
+	pyrMeanShiftFiltering(colorSideMat, meanShiftSide, spatialRadius, colorRadius, pyramidLevels);
+}
+	
 void ofApp::analyze() {
-	// update maskusing depth
-	int w = maskFront.getWidth(), h = maskFront.getHeight(), n = w * h;
-	unsigned char* maskFrontPixels = maskFront.getPixels();
-	unsigned char* maskSidePixels = maskSide.getPixels();
-	unsigned short* depthFrontPixels = depthFront.getPixels();
-	unsigned short* depthSidePixels = depthSide.getPixels();
-	unsigned short threshold = backgroundThreshold;
-	for(int i = 0; i < n; i++) {
-		if(depthFrontPixels[i] > threshold) {
-			maskFrontPixels[i] = 128;
-		}
-		if(depthSidePixels[i] > threshold) {
-			maskSidePixels[i] = 128;
-		}
-	}
+	buildMask(maskFront, meanShiftFront, depthFront);
 	maskFront.update();
+	buildMask(maskSide, meanShiftSide, depthSide);
 	maskSide.update();
 	
-	ofVec3f f1 = sampleDepth(depthFront, floor1);
-	ofVec3f f2 = sampleDepth(depthFront, floor2);
-	ofVec3f f3 = sampleDepth(depthFront, floor3);
+	centroid = ofVec2f();
+	int centroidCount = 0;
+	int w = maskFront.getWidth(), h = maskFront.getHeight();
+	unsigned char* maskFrontPixels = maskFront.getPixels();
+	for(int y = 0; y < h; y++) {
+		for(int x = 0; x < w; x++) {
+			int i = y * w + x;
+			if(maskFrontPixels[i]) {
+				centroid += ofVec2f(x, y);
+				centroidCount++;
+			}
+		}
+	}
+	centroid /= centroidCount;
+	
+	ofVec3f f1 = sampleDepth(depthFront, floor1, 2);
+	ofVec3f f2 = sampleDepth(depthFront, floor2, 2);
+	ofVec3f f3 = sampleDepth(depthFront, floor3, 2);
 	ofVec3f floorNormal = getNormal(f1, f2, f3);
 	
 	vector<string> names;
 	vector<float> samples;
-	samples.push_back(ankle); names.push_back("ankle");
-	samples.push_back(calf); names.push_back("calf");
-	samples.push_back(knee); names.push_back("knee");
-	samples.push_back(midthigh); names.push_back("midthigh");
-	samples.push_back(thigh); names.push_back("thigh");
-	samples.push_back(butt); names.push_back("butt");
-	samples.push_back(hip); names.push_back("hip");
+	samples.push_back(ankleFront); names.push_back("ankle");
+	samples.push_back(ofLerp(ankleFront, hipFront, calf)); names.push_back("calf");
+	samples.push_back(ofLerp(ankleFront, hipFront, knee)); names.push_back("knee");
+	samples.push_back(ofLerp(ankleFront, hipFront, midthigh)); names.push_back("midthigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, thigh)); names.push_back("thigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, butt)); names.push_back("butt");
+	samples.push_back(hipFront); names.push_back("hip");
 	
 	bool torso[] = {
 		false, false, false, false, false, true, true
@@ -156,79 +226,179 @@ void ofApp::analyze() {
 	// some parts of the leg / torso are more elliptical, others are more rectangular,
 	// and the perimeter between an ellipse and rectangle are very different,
 	// so we calculate both and pick an inbetween value.
-	float rectangularity[] = {0, .33, .25, .4, .35, .68, .3};
+	float rectangularity[] = {.27, .24, .33, .15, .10, .25, .20};
 	frontEdges.clear();
 	sideEdges.clear();
 	heights.clear();
 	circumferences.clear();
 	depths.clear();
 	for(int i = 0; i < samples.size(); i++) {
-		ofVec3f left, right;
 		int y = samples[i];
 		ofVec3f leftPoint, rightPoint;
-		int leftEdge, rightEdge;
-		float front;
+		ofVec3f leftEdge, rightEdge;
+		float height = 0;
+		int heightCount = 0;
+		float front = 0;
 		if(torso[i]) {
 			front = measureSegment(y, depthFront, maskFront, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			heightCount += 2;
 		} else {
-			front = measureSegment(y, depthFront, maskFront, 0, center, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
-			front += measureSegment(y, depthFront, maskFront, center, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-			frontEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+			front = measureSegment(y, depthFront, maskFront, 0, centroid.x, leftEdge, rightEdge, leftPoint, rightPoint);
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			front += measureSegment(y, depthFront, maskFront, centroid.x, 640, leftEdge, rightEdge, leftPoint, rightPoint);
+			frontEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
+			height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+			height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+			heightCount += 4;
 			front /= 2;
 		}
 		
-		ofVec3f projectedToFloor = closestPointOnPlane(f1, floorNormal, leftPoint);
-		heights.push_back(leftPoint.distance(projectedToFloor));
-		
-		y = ofMap(y, ankle, hip, ankleSide, hipSide);
-		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint);
-		sideEdges.push_back(pair<ofVec2f, ofVec2f>(ofVec2f(leftEdge, y), ofVec2f(rightEdge, y)));
+		y = ofMap(y, ankleFront, hipFront, ankleSide, hipSide);
+		float slope = 0;
+		if(names[i] == "hip") {
+			slope = hipSlope;
+		}
+		float side = measureSegment(y, depthSide, maskSide, 0, 640, leftEdge, rightEdge, leftPoint, rightPoint, slope);
+		sideEdges.push_back(pair<ofVec2f, ofVec2f>(leftEdge, rightEdge));
 		depths.push_back(leftPoint.z);
+		
+		height += leftPoint.distance(closestPointOnPlane(f1, floorNormal, leftPoint));
+		height += rightPoint.distance(closestPointOnPlane(f1, floorNormal, rightPoint));
+		heightCount += 2;
+		heights.push_back(height / heightCount);
 		
 		float perimeterEllipse = perimeterOfEllipse(front / 2, side / 2);
 		float perimeterRectangle = 2 * (front + side);
 		float circumference = ofLerp(perimeterEllipse, perimeterRectangle, rectangularity[i]);
 		circumferences.push_back(circumference);
-		//cout << names[i] << ": " << front << "mm x " << side << "mm = " << circumference << "mm" << endl;
-		//cout << names[i] << ": " << millimetersToInches(front) << "in x " << millimetersToInches(side) << "in = " << millimetersToInches(circumference) << "in" << endl;
 	}
+	
+	crotch.clear();
+	
+	crotch.curveTo(sideEdges[6].first);
+	crotch.curveTo(sideEdges[6].first);
+	crotch.curveTo(sideEdges[5].first);
+	ofVec2f thighMidpoint = (sideEdges[4].first + sideEdges[4].second) / 2;
+	crotch.curveTo(thighMidpoint);
+	crotch.curveTo(sideEdges[5].second);
+	crotch.curveTo(sideEdges[6].second);
+	crotch.curveTo(sideEdges[6].second);
+	
+	float crotchDepth = 0;
+	// should use points instead of depths
+	for(int i = 0; i < depths.size(); i++) {
+		if(i == 0 || depths[i] > crotchDepth) {
+			crotchDepth = depths[i];
+		}
+	}
+	crotchLength = ConvertProjectiveToRealWorld(crotch, crotchDepth).getPerimeter();
 }
 
 void ofApp::setupGui() {
 	gui = new ofxUICanvas();
+	gui->setTheme(OFX_UI_THEME_MINBLACK);
 	gui->addLabel("Measure");
 	gui->addSpacer();
 	gui->addFPS();
 	gui->addSpacer();
-	gui->addToggle("Curved crotch", &useCurvedCrotch);
-	gui->addSlider("Color alpha", 0, 255, &colorAlpha);
-	gui->addSlider("Background threshold", 0, 5000, &backgroundThreshold);
-	gui->addSlider("Ankle", 0, 640, &ankle);
-	gui->addSlider("Calf", 0, 640, &calf);
-	gui->addSlider("Knee", 0, 640, &knee);
-	gui->addSlider("Midthigh", 0, 640, &midthigh);
-	gui->addSlider("Thigh", 0, 640, &thigh);
-	gui->addSlider("Butt", 0, 640, &butt);
-	gui->addSlider("Hip", 0, 640, &hip);
-	gui->addSlider("Center", 0, 640, &center);
-	gui->addSlider("Hip (side)", 0, 640, &hipSide);
-	gui->addSlider("Ankle (side)", 0, 640, &ankleSide);
-	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 200, 150);
-	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 200, 150);
-	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 200, 150);
+	gui->addLabelButton("Save to JSON", &saveToJson);
+	gui->addLabelToggle("Use Kinect", &useKinect);
+	gui->addButton("Sample front", &sampleFront);
+	gui->addButton("Sample side", &sampleSide);
+	gui->addMinimalSlider("Background threshold", 0, 5000, &backgroundThreshold);
+	gui->addMinimalSlider("Hip (front)", 0, 640, &hipFront);
+	gui->addMinimalSlider("Hip (side)", 0, 640, &hipSide);
+	gui->addMinimalSlider("Ankle (front)", 0, 640, &ankleFront);
+	gui->addMinimalSlider("Ankle (side)", 0, 640, &ankleSide);
+	gui->addMinimalSlider("Hip slope", -1, 1, &hipSlope);
+	gui->addSpacer();
+	gui->addMinimalSlider("Calf", 0, 1, &calf);
+	gui->addMinimalSlider("Knee", 0, 1, &knee);
+	gui->addMinimalSlider("Midthigh", 0, 1, &midthigh);
+	gui->addMinimalSlider("Thigh", 0, 1, &thigh);
+	gui->addMinimalSlider("Butt", 0, 1, &butt);
+	gui->addMinimalSlider("Color alpha", 0, 255, &colorAlpha);
+	gui->addMinimalSlider("Hue center", 0, 255, &hueCenter);
+	gui->addMinimalSlider("Hue range", 0, 255, &hueRange);
+	gui->addMinimalSlider("Saturation/Value padding", 0, 255, &svPadding);
+	gui->addMinimalSlider("Background erode", 1, 16, &backgroundErode);
+	gui->addMinimalSlider("Foreground dilate", 1, 8, &foregroundDilate);
+	gui->addMinimalSlider("Foreground erode", 1, 16, &foregroundErode);
+	//gui->addMinimalSlider("Pyramid levels", 0, 6, &pyramidLevels);
+	//gui->addMinimalSlider("Spatial radius", 1, 64, &spatialRadius);
+	//gui->addMinimalSlider("Color radius", 1, 128, &colorRadius);
+	
+	gui->add2DPad("Floor.1", ofVec2f(0, 640), ofVec2f(0, 480), &floor1, 100, 75);
+	gui->add2DPad("Floor.2", ofVec2f(0, 640), ofVec2f(0, 480), &floor2, 100, 75);
+	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
+	
 	gui->autoSizeToFitWidgets();
 }
 
 void ofApp::update() {
+	if(useKinect && !kinect.isConnected()) {
+		kinect.setRegistration(true);
+		kinect.init();
+		kinect.open();
+	}
+	kinect.update();
+	if(kinect.isFrameNew()) {
+		if(sampleFront) {
+			copy(kinect.getPixelsRef(), colorFront);
+			copy(kinect.getRawDepthPixelsRef(), depthFront);
+			colorFront.update();
+			sampleFront = false;
+			updateMeanShift();
+		} else if(sampleSide) {
+			copy(kinect.getPixelsRef(), colorSide);
+			copy(kinect.getRawDepthPixelsRef(), depthSide);
+			colorSide.update();
+			sampleSide = false;
+			updateMeanShift();
+		}
+	}
 	analyze();
+	if(saveToJson) {
+		ofFile file("measurements.json", ofFile::WriteOnly);
+		file << "{" << endl;
+		file << "\t\"ankle\" : " << millimetersToInches(circumferences[0]) << "," << endl;
+		file << "\t\"calf\" : " << millimetersToInches(circumferences[1]) << "," << endl;
+		file << "\t\"knee\" : " << millimetersToInches(circumferences[2]) << "," << endl;
+		file << "\t\"midthigh\" : " << millimetersToInches(circumferences[3]) << "," << endl;
+		file << "\t\"thigh\" : " << millimetersToInches(circumferences[4]) << "," << endl;
+		file << "\t\"butt\" : " << millimetersToInches(circumferences[5]) << "," << endl;
+		file << "\t\"hip\" : " << millimetersToInches(circumferences[6]) << "," << endl;
+		file << "\t\"crotchLength\" : " << millimetersToInches(crotchLength) << "," << endl;
+		file << "\t\"hipSlope\" : " << hipSlope << "," << endl;
+		file << "\t\"ankleToFloor\" : " << millimetersToInches(heights[0]) << "," << endl;
+		file << "\t\"calfToFloor\" : " << millimetersToInches(heights[1]) << "," << endl;
+		file << "\t\"kneeToFloor\" : " << millimetersToInches(heights[2]) << "," << endl;
+		file << "\t\"midthighToFloor\" : " << millimetersToInches(heights[3]) << "," << endl;
+		file << "\t\"thighToFloor\" : " << millimetersToInches(heights[4]) << "," << endl;
+		file << "\t\"buttToFloor\" : " << millimetersToInches(heights[5]) << "," << endl;
+		file << "\t\"hipToFloor\" : " << millimetersToInches(heights[6]) << endl;
+		file << "}" << endl;
+		saveToJson = false;
+	}
 }
 
 void ofApp::draw() {
 	ofBackground(0);
 	
 	ofSetColor(255);
+	if(useKinect) {
+		kinect.draw(0, 0);
+		kinect.drawDepth(0, 480);
+	}
+	
+	ofPushMatrix();
+	ofTranslate(640, 0);
+	
 	maskFront.draw(0, 0);	
 	ofPushStyle();
 	ofSetColor(255, colorAlpha);
@@ -237,19 +407,20 @@ void ofApp::draw() {
 	
 	vector<string> names;
 	vector<float> samples;
-	samples.push_back(ankle); names.push_back("ankle");
-	samples.push_back(calf); names.push_back("calf");
-	samples.push_back(knee); names.push_back("knee");
-	samples.push_back(midthigh); names.push_back("midthigh");
-	samples.push_back(thigh); names.push_back("thigh");
-	samples.push_back(butt); names.push_back("butt");
-	samples.push_back(hip); names.push_back("hip");
+	samples.push_back(ankleFront); names.push_back("ankle");
+	samples.push_back(ofLerp(ankleFront, hipFront, calf)); names.push_back("calf");
+	samples.push_back(ofLerp(ankleFront, hipFront, knee)); names.push_back("knee");
+	samples.push_back(ofLerp(ankleFront, hipFront, midthigh)); names.push_back("midthigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, thigh)); names.push_back("thigh");
+	samples.push_back(ofLerp(ankleFront, hipFront, butt)); names.push_back("butt");
+	samples.push_back(hipFront); names.push_back("hip");
 	for(int i = 0; i < samples.size(); i++) {
 		int y = samples[i];
 		ofLine(0, y, 640, y);
 		MiniFont::drawHighlight(names[i], 540, y);
 	}
-	ofLine(center, 0, center, 480);
+	ofLine(centroid.x, 0, centroid.x, 480);
+	MiniFont::drawHighlight("centroid", centroid.x, 0);
 	for(int i = 0; i < frontEdges.size(); i++) {
 		ofSetColor(0);
 		ofLine(frontEdges[i].first, frontEdges[i].second);
@@ -277,9 +448,8 @@ void ofApp::draw() {
 	
 	for(int i = 0; i < samples.size(); i++) {
 		float y = samples[i];
-		y = ofMap(y, ankle, hip, ankleSide, hipSide);
+		y = ofMap(y, ankleFront, hipFront, ankleSide, hipSide);
 		ofLine(0, y, 640, y);
-		MiniFont::drawHighlight(names[i], 540, y);
 	}
 	for(int i = 0; i < sideEdges.size(); i++) {
 		ofSetColor(0);
@@ -297,35 +467,32 @@ void ofApp::draw() {
 		MiniFont::drawHighlight("h" + ofToString(millimetersToInches(heights[i])) + " / c" + ofToString(millimetersToInches(circumferences[i])), sideEdges[i].second);
 	}
 	
-	ofPolyline crotch;
-	if(useCurvedCrotch) {
-		crotch.curveTo(sideEdges[6].first);
-		crotch.curveTo(sideEdges[6].first);
-		crotch.curveTo(sideEdges[5].first);
-		crotch.curveTo(sideEdges[4].second);
-		crotch.curveTo(sideEdges[5].second);
-		crotch.curveTo(sideEdges[6].second);
-		crotch.curveTo(sideEdges[6].second);
-	} else {
-		crotch.addVertex(sideEdges[6].first);
-		crotch.addVertex(sideEdges[5].first);
-		crotch.addVertex(sideEdges[4].second);
-		crotch.addVertex(sideEdges[5].second);
-		crotch.addVertex(sideEdges[6].second);
-	}
 	ofSetColor(magentaPrint);
 	crotch.draw();
-	float crotchDepth = 0;
-	for(int i = 0; i < depths.size(); i++) {
-		if(i == 0 || depths[i] > crotchDepth) {
-			crotchDepth = depths[i];
-		}
-	}
-	float crotchLength = ConvertProjectiveToRealWorld(crotch, crotchDepth).getPerimeter();
-	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotch.getCentroid2D());
+	ofVec2f crotchLabelPosition = (sideEdges[4].first + sideEdges[4].second + sideEdges[5].first + sideEdges[5].second) / 4;
+	MiniFont::drawHighlight("crotch " + ofToString(millimetersToInches(crotchLength)), crotchLabelPosition);
 	
+	ofPopMatrix();
 	ofPopMatrix();
 }
 
 void ofApp::keyPressed(int key) {
+	if(key == 'f') {
+		ofToggleFullscreen();
+	}
+	if(key == 's') {
+		gui->saveSettings("settings.xml");
+	}
+	if(key == 'l') {
+		gui->loadSettings("settings.xml");
+	}
+	if(key == '1') {
+		floor1.set(mouseX, mouseY);
+	}
+	if(key == '2') {
+		floor2.set(mouseX, mouseY);
+	}
+	if(key == '3') {
+		floor3.set(mouseX, mouseY);
+	}
 }
