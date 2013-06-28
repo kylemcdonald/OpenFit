@@ -12,7 +12,7 @@
  use centroid instead of calculating it manually
  */
 
-bool saveToJson = false,
+bool exportData = false,
 sampleSide = false,
 sampleFront = false,
 useKinect = false;
@@ -306,7 +306,7 @@ void ofApp::setupGui() {
 	gui->addSpacer();
 	gui->addFPS();
 	gui->addSpacer();
-	gui->addLabelButton("Save to JSON", &saveToJson);
+	gui->addLabelToggle("Export", &exportData);
 	gui->addLabelToggle("Use Kinect", &useKinect);
 	gui->addButton("Sample front", &sampleFront);
 	gui->addButton("Sample side", &sampleSide);
@@ -363,8 +363,14 @@ void ofApp::update() {
 		}
 	}
 	analyze();
-	if(saveToJson) {
-		ofFile file("measurements.json", ofFile::WriteOnly);
+	if(exportData) {
+		ofFileDialogResult result = ofSystemSaveDialog("New Folder", "Enter output directory.");
+		string dir = result.getPath() + "/";
+		colorFront.saveImage(dir + "color-front.png");
+		colorSide.saveImage(dir + "color-side.png");
+		depthFront.saveImage(dir + "depth-front.png");
+		depthSide.saveImage(dir + "depth-side.png");
+		ofFile file(dir + "measurements.json", ofFile::WriteOnly);
 		file << "{" << endl;
 		file << "\t\"ankle\" : " << millimetersToInches(circumferences[0]) << "," << endl;
 		file << "\t\"calf\" : " << millimetersToInches(circumferences[1]) << "," << endl;
@@ -383,7 +389,7 @@ void ofApp::update() {
 		file << "\t\"buttToFloor\" : " << millimetersToInches(heights[5]) << "," << endl;
 		file << "\t\"hipToFloor\" : " << millimetersToInches(heights[6]) << endl;
 		file << "}" << endl;
-		saveToJson = false;
+		exportData = false;
 	}
 }
 
