@@ -1,0 +1,18 @@
+{
+	"ankle" : 9.89047,
+	"calf" : 16.2264,
+	"knee" : 17.1515,
+	"midthigh" : 20.9978,
+	"thigh" : 23.5008,
+	"butt" : 41.0142,
+	"hip" : 38.9756,
+	"crotchLength" : 24.7896,
+	"hipSlope" : 0.192118,
+	"ankleToFloor" : 5.39106,
+	"calfToFloor" : 14.2488,
+	"kneeToFloor" : 20.1443,
+	"midthighToFloor" : 27.3852,
+	"thighToFloor" : 30.4058,
+	"buttToFloor" : 34.4708,
+	"hipToFloor" : 38.708
+}
