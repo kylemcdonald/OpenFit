@@ -70,7 +70,7 @@ void setup() {
   font = createFont("Arial", 12);
   textFont(font);
 
-  loadMeasurements("measurements-nicole.json");
+  loadMeasurements("measurements_nicole.json");
   printLoadedMeasurements();
   measurementGui();
 }
