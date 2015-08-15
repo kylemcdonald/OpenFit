@@ -23,8 +23,12 @@ colorRadius = 25,
 depthThreshold = 1300;
 
 void testApp::setup() {
-	depth.loadImage("depth.png");
-	color.loadImage("color.png");	
+//	depth.loadImage("depth.png");
+//	color.loadImage("color.png");
+    
+    color.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-color.png");
+    depth.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-depth.png");
+
 	setupGui();
 }
 
