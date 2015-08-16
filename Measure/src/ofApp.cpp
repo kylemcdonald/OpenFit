@@ -99,17 +99,10 @@ ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position, int radius) {
 void ofApp::setup() {
 	MiniFont::setup();
 	
-//	colorFront.loadImage("color-front.png");
-//	depthFront.loadImage("depth-front.png");
-//	colorSide.loadImage("color-side.png");
-//	depthSide.loadImage("depth-side.png");
-
-    colorFront.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-color.png");
-    depthFront.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-depth.png");
-    colorFront.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-color.png");
-    depthFront.loadImage("/Users/gene/Code/of_v0.8-4.4_osx_release/apps/OpenFit/MeasureRealtime/bin/data/0-depth.png");
-
-    
+	colorFront.loadImage("color-front.png");
+	depthFront.loadImage("depth-front.png");
+	colorSide.loadImage("color-side.png");
+	depthSide.loadImage("depth-side.png");
     updateMeanShift();
 	
 	setupGui();
