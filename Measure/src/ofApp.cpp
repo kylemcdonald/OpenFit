@@ -103,7 +103,7 @@ void ofApp::setup() {
 	depthFront.loadImage("depth-front.png");
 	colorSide.loadImage("color-side.png");
 	depthSide.loadImage("depth-side.png");
-	updateMeanShift();
+    updateMeanShift();
 	
 	setupGui();
 }
@@ -279,8 +279,8 @@ void ofApp::analyze() {
 	}
 	
 	crotch.clear();
-	
-	crotch.curveTo(sideEdges[6].first);
+
+    crotch.curveTo(sideEdges[6].first);
 	crotch.curveTo(sideEdges[6].first);
 	crotch.curveTo(sideEdges[5].first);
 	ofVec2f thighMidpoint = (sideEdges[4].first + sideEdges[4].second) / 2;

@@ -24,7 +24,8 @@ depthThreshold = 1300;
 
 void testApp::setup() {
 	depth.loadImage("depth.png");
-	color.loadImage("color.png");	
+	color.loadImage("color.png");
+
 	setupGui();
 }
 
