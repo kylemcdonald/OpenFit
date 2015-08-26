@@ -15,21 +15,21 @@
 		<key>7E804D925461714118DB355C65BC964B41D94376</key>
 		<string>https://github.com/rezaali/ofxUI.git</string>
 		<key>95AE3D1F9829539293D82AB52DD48AD487F900B9</key>
-		<string>https://github.com/genekogan/OpenFit.git</string>
+		<string>https://github.com/kylemcdonald/OpenFit.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>MeasureRealtime/MeasureRealtime.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>37526DA425E5430474A14FBFA1BC4525160B5FC1</key>
-		<string>../../../../addons/ofxCv</string>
+		<string>../../../../../addons/ofxCv</string>
 		<key>7E804D925461714118DB355C65BC964B41D94376</key>
-		<string>../../../../addons/ofxUI</string>
+		<string>../../../../../addons/ofxUI</string>
 		<key>95AE3D1F9829539293D82AB52DD48AD487F900B9</key>
 		<string>../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>https://github.com/genekogan/OpenFit.git</string>
+	<string>https://github.com/kylemcdonald/OpenFit.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
