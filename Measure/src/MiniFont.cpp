@@ -20,11 +20,11 @@ namespace MiniFont {
 	}
 	
 	void setup() {
-		font.loadFont("uni05_53.ttf", 6, false);		
+        font.loadFont(OF_TTF_MONO, 8, true, false, true, .1);
 	}
 	
 	void draw(string str, float x, float y) {
-		font.drawString(str, x, y);
+		font.drawStringAsShapes(str, x, y);
 	}
 	
 	void drawHighlight(string str, const ofVec2f& position, ofColor bg, ofColor fg) {
@@ -43,7 +43,7 @@ namespace MiniFont {
 		ofFill();
 		ofRect(rect);
 		ofSetColor(fg);
-		font.drawString(str, x, y);
+		font.drawStringAsShapes(str, x, y);
 		ofPopMatrix();
 		ofPopStyle();
 	}

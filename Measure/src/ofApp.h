@@ -44,6 +44,8 @@ public:
 	
 	ofPolyline crotch;
 	float crotchLength;
+    
+    float screenScale;
 	
 	ofxKinect kinect;
 };

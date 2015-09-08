@@ -301,11 +301,12 @@ void ofApp::analyze() {
 
 void ofApp::setupGui() {
 	gui = new ofxUICanvas();
+    gui->setRetinaResolution();
 	gui->setTheme(OFX_UI_THEME_MINBLACK);
-	gui->addLabel("Measure");
-	gui->addSpacer();
-	gui->addFPS();
-	gui->addSpacer();
+//	gui->addLabel("Measure");
+//	gui->addSpacer();
+//	gui->addFPS();
+//	gui->addSpacer();
 	gui->addLabelToggle("Export", &exportData);
 	gui->addLabelToggle("Use Kinect", &useKinect);
 	gui->addButton("Sample front", &sampleFront);
@@ -338,6 +339,8 @@ void ofApp::setupGui() {
 	gui->add2DPad("Floor.3", ofVec2f(0, 640), ofVec2f(0, 480), &floor3, 100, 75);
 	
 	gui->autoSizeToFitWidgets();
+    
+    gui->loadSettings("settings.xml");
 }
 
 void ofApp::update() {
@@ -395,6 +398,10 @@ void ofApp::update() {
 
 void ofApp::draw() {
 	ofBackground(0);
+    
+    ofPushMatrix();
+    screenScale = (float) ofGetHeight() / (480 * 2);
+    ofScale(screenScale, screenScale);
 	
 	ofSetColor(255);
 	if(useKinect) {
@@ -480,6 +487,7 @@ void ofApp::draw() {
 	
 	ofPopMatrix();
 	ofPopMatrix();
+    ofPopMatrix();
 }
 
 void ofApp::keyPressed(int key) {
@@ -493,12 +501,12 @@ void ofApp::keyPressed(int key) {
 		gui->loadSettings("settings.xml");
 	}
 	if(key == '1') {
-		floor1.set(mouseX, mouseY);
+		floor1.set(-640 + mouseX / screenScale, mouseY / screenScale);
 	}
 	if(key == '2') {
-		floor2.set(mouseX, mouseY);
+		floor2.set(-640 + mouseX / screenScale, mouseY / screenScale);
 	}
 	if(key == '3') {
-		floor3.set(mouseX, mouseY);
+		floor3.set(-640 + mouseX / screenScale, mouseY / screenScale);
 	}
 }
