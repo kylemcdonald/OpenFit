@@ -99,10 +99,10 @@ ofVec3f ofApp::sampleDepth(ofShortImage& depth, ofVec2f position, int radius) {
 void ofApp::setup() {
 	MiniFont::setup();
 	
-    colorFront.loadImage("0-color.png");
-    depthFront.loadImage("0-depth.png");
-    colorSide.loadImage("1-color.png");
-    depthSide.loadImage("1-depth.png");
+    colorFront.loadImage("default/color-front.png");
+    depthFront.loadImage("default/depth-front.png");
+    colorSide.loadImage("default/color-side.png");
+    depthSide.loadImage("default/depth-side.png");
     updateMeanShift();
 	
 	setupGui();
