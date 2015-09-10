@@ -1,0 +1,31 @@
+Draft From Center Measurement List
+
+hip: hip circumference, where you want the top of your pants to be, generally higher in the back and lower in the front
+(hip is the only circumference measurement not taken on a horizontal plane!)
+hipToFloor: measured from the side of the hips, where you would like the top of your pants to be
+
+butt: circumference taken at widest part of hips and/or butt, taken on a horizontal plane
+buttToFloor
+
+crotchLength:  measuring tape begins at hip front (generally an inch or two below navel) through crotch and to top of butt
+crotchToFloor: lowest point of crotch to floor
+
+thigh: circumference of thigh taken as high (close to crotch) as possible
+
+midthigh: circumference measurement taken three inches below thigh
+
+knee: circumference taken at the center of the knee, where kneebone juts out on inside of leg
+kneeToFloor
+
+calf: calf at widest part
+calfToFloor
+
+ankle: ankle measurement taken at skinniest part of ankle
+ankleToFloor:
+
+instep: top of foot to floor
+
+
+
+
+
