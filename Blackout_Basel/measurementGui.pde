@@ -2,11 +2,11 @@ Numberbox hipNumberbox, buttNumberbox, thighNumberbox, midthighNumberbox, kneeNu
 Numberbox crotchLengthNumberbox, ankleToFloorNumberbox, calfToFloorNumberbox, kneeToFloorNumberbox, thighToFloorNumberbox, midthighToFloorNumberbox, buttToFloorNumberbox, hipToFloorNumberbox;
 Numberbox ankleRatioNumberbox, calfRatioNumberbox, kneeRatioNumberbox, midthighRatioNumberbox, thighRatioNumberbox, buttRatioNumberbox, hipRatioNumberbox;
 Numberbox riseNumberbox, waistbandHeightNumberbox, backTiltNumberbox, frontTiltNumberbox, buttMeasurementAngleNumberbox, lowerLegShiftNumberbox;
-Numberbox crotchEaseNumberbox, hipEaseNumberbox, buttEaseNumberbox, thighEaseNumberbox, midthighEaseNumberbox, kneeEaseNumberbox, calfEaseNumberbox, ankleEaseNumberbox, hemHeightNumberbox;
+Numberbox crotchEaseNumberbox, hipEaseNumberbox, buttEaseNumberbox, thighEaseNumberbox, midthighEaseNumberbox;
+Numberbox kneeEaseNumberbox, calfEaseNumberbox, ankleEaseNumberbox, hemHeightNumberbox,baselStyleXNumberbox,baselStyleYNumberbox;
 //no hipSlopeNumberbox
 
-Toggle skinnyStyleToggle, draftingToggle, yardstickToggle, gridToggle, bodyPointToggle, pantPointToggle, bodyShapeToggle, pantShapeToggle, seamAllowanceToggle, yokeToggle;
-;
+Toggle skinnyStyleToggle, draftingToggle, yardstickToggle, gridToggle, bodyPointToggle, pantPointToggle, bodyShapeToggle, pantShapeToggle, seamAllowanceToggle, yokeToggle, baselToggle;
 
 void measurementGui() {
   cp5 = new ControlP5(this);
@@ -107,7 +107,12 @@ void measurementGui() {
   pantShapeToggle = cp5.addToggle("pantShapeTF").setPosition(column, y+=spacing).setSize(20, 20);
   seamAllowanceToggle = cp5.addToggle("seamAllowanceTF").setPosition(column, y+=spacing).setSize(20, 20);
   //yokeToggle = cp5.addToggle("yokeTF").setPosition(column, y+=spacing).setSize(20, 20); // toxilibs null pointers.... again
-  
+  baselToggle = cp5.addToggle("baselTF").setPosition(column, y+=spacing).setSize(20, 20);
+  baselStyleXNumberbox = cp5.addNumberbox("baselStyleX").setPosition(column, y+=spacing).setRange(0, 20)
+    .setValue(baselStyleX).setMultiplier(0.25);
+  baselStyleYNumberbox = cp5.addNumberbox("baselStyleY").setPosition(column, y+=spacing).setRange(0, 20)
+    .setValue(baselStyleY).setMultiplier(0.25);
+
 
   column = width- 5*4*drawingScale;
   y = 0.5*drawingScale;
@@ -197,8 +202,7 @@ void pantMeasurementCalculations() {
     calfEase = -.5; 
     ankleEase = (calf - 1.5)-ankle;
     hemHeight = ankleToFloor;
-  } 
-  else {
+  } else {
     crotchEase = 3; // usualy 1.25
     hipEase = 0;
     buttEase = 2;

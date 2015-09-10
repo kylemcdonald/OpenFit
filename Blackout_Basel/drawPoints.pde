@@ -157,3 +157,38 @@ void drawPantPointsSAB() {
     text(pointLabels[i], x + pointSize, y);
   }
 }
+
+void drawBaselPointsF() {
+  noStroke();
+  fill(4,66,87);
+  textAlign(LEFT, CENTER);
+  PVector[] points = {
+  v1,v2,v3, v4, v5, v6, v7
+  };
+  String[] pointLabels = {
+  "v1","v2","v3","v4","v5","v6","v7"
+  };
+  for (int i = 0; i < points.length; i++) {
+    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+    ellipse(x, y, pointSize, pointSize); 
+    text(pointLabels[i], x + pointSize, y);
+  }
+}
+
+void drawBaselPointsB() {
+  noStroke();
+  fill(4,66,87);
+  textAlign(LEFT, CENTER);
+  PVector[] points = {
+  v8,v9,v10,v11,v12,v13,v14
+  };
+  String[] pointLabels = {
+  "v8","v9","v10","v11","v12","v13","v14"
+  };
+  for (int i = 0; i < points.length; i++) {
+    float x = points[i].x * drawingScale, y = points[i].y * drawingScale; 
+
+    ellipse(x, y, pointSize, pointSize); 
+    text(pointLabels[i], x + pointSize, y);
+  }
+}

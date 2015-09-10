@@ -40,6 +40,9 @@ float seamAllowance = 3/8.;
 float yokeInside = 2;
 float yokeOutside = 1.25;
 
+float baselStyleY = 0; //arbitrary variable to change style of pants
+float baselStyleX = 0; //arbitrary variable to change style of pants
+
 //pattern points
 PVector d0, d1, d2, d2a, d3, d4, d5, d6, d0R; // drafting points
 PVector b1, b2, b3, b3a, b4, b5, b6, b7, b8, b9, b9a, b10, b11, b12, cp1, cp2; //body points front
@@ -62,6 +65,7 @@ boolean bodyShapeTF = true;
 boolean pantShapeTF = true;
 boolean seamAllowanceTF = false;
 boolean yokeTF = false;
+boolean baselTF = false;
 
 //get rid of "unstable"
 
@@ -158,6 +162,19 @@ void draw() {
     pushMatrix();
     translateScale (30, 6);
     pantShapeB();
+    popMatrix();
+  }
+  
+  if (baselTF == true) {
+    //front
+    pushMatrix();
+    translateScale (14, 6);
+    drawBaselPointsF();
+    popMatrix();
+    //back
+    pushMatrix();
+    translateScale (30, 6);
+    drawBaselPointsB();
     popMatrix();
   }
 

@@ -44,7 +44,7 @@ void bodyPointsF() {
   while (bezierLength (b9, cp1, cp2, b7)< crotchLengthFront) {
     b7.y -= 0.1;
     b7.x -= frontTilt*.001;
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("checking bezierLength is stuck.");
       break;
     }
@@ -61,7 +61,7 @@ void bodyPointsF() {
   i = 0;
   while (b5.y < (d1.y+buttMeasurementAngle)) {  
     rotate2D(b5, -1);
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("checking buttMeasurementAngle #1 is stuck.");
       break;
     }
@@ -110,7 +110,7 @@ void bodyPointsB() {
   while (bezierLength (b21, cp3, cp4, b19)< crotchLengthBack) {
     b19.y -= 0.1;
     b19.x -= backTilt*.001; //experiment here with steepness of crotch curve, was .05
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("getting crotchLengthBack right is stuck.");
       break;
     }
@@ -132,7 +132,7 @@ void bodyPointsB() {
   i = 0;
   while (b17.y < (d1.y+buttMeasurementAngle)) { 
     rotate2D(b17, -1);
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("getting buttMeasurementAngle #2 right is stuck.");
       break;
     }
@@ -198,7 +198,7 @@ void pantPointsF() {
   while (bezierLength (p9, cp1, cp2, p7)< rise) {
     p7.y -= 0.1;
     p7.x -= frontTilt*.001;
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("getting rise right is stuck.");
       break;
     }
@@ -256,7 +256,7 @@ void pantPointsB() {
   while (bezierLength (p21, cp3, cp4, p19) < (crotchLengthBack-waistbandHeight)) {
     p19.y -= 0.1;
     p19.x -= backTilt*.001;
-    if(i++ > 1000) {
+    if (i++ > 1000) {
       println("getting crotchLengthBack-waistbandHeight is stuck.");
       break;
     }
@@ -380,7 +380,7 @@ void yokeSA() {
   h19a =parallelLinePoint(p19, p19a, seamAllowance, false, false);
   l19a = parallelLinePoint(p19a, p17a, seamAllowance, true, false);
   l17a = parallelLinePoint(p19a, p17a, seamAllowance, false, false);
-  
+
   sa17a = intersectAtDistance(sa17, h17a, l19a, l17a);
   sa19a = intersectAtDistance(sa19, h19a, l17a, l19a);
 }
@@ -391,14 +391,37 @@ void yokeSA() {
 //PVector p1, p2, p3, p3a, p4, p5, p6, p7, p8, p9, p9a, p10, p11, p12; //pant points front
 //PVector p13, p14, p15, p15a, p16, p17, p18, p19, p20, p21, p21a, p22, p23, p24; // pant points back
 // copy p oints and control points
-// then add v points 1 -15
 
-PVector v1;
+PVector v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14;
+
 void baselPointsF() {
-
+  v1 = p1.get();
+  v3 = p6.get();
+  v3.x -= 1;  //(make the pants an inch wider at the waist)
+  v3.y -= 2;  //(make the pants two inches taller)
+  v2 = v3. get();
+  v2.y = p2.y;
+  v2.y -= baselStyleY;
+  v2.x -= baselStyleX; 
+  v4 = p7.get();
+  v4.y -= 2;
+  v5 = p9.get();
+  v6 = p10.get();
+  v7= p12.get();
 }
 
 void baselPointsB() {
-
+  v8 = p13.get();
+  v10 = p18.get();
+  v10.x -= 1;  //(make the pants an inch wider at the waist)
+  v10.y -= 2;  //(make the pants two inches taller)
+  v9 = v10.get();
+  v9.y = p14.y;
+  v9.y -= baselStyleY;
+  v9.x -= baselStyleX;
+  v11 = p19.get();
+  v12 = p21.get();
+  v13= p22.get();
+  v14= p24.get();
 }
 
