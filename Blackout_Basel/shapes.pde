@@ -8,13 +8,11 @@ void bodyShapeF() {
   vertexScale(b3a);
   if ((b3a.x < b4.x)||(b3a.x < b5.x)) {
     vertexScale(b6);
-  } 
-  else { 
+  } else { 
     if (b4.x < b5.x) {
       vertexScale(b4);
       vertexScale(b6);
-    } 
-    else {
+    } else {
       vertexScale(b5);
       vertexScale(b6);
     }
@@ -38,8 +36,7 @@ void bodyShapeB() {
   vertexScale(b15a);
   if (b16.x < b17.x) {
     vertexScale(b16);
-  } 
-  else {
+  } else {
     vertexScale(b17);
   }
   vertexScale(b18);
@@ -60,8 +57,7 @@ void pantShapeF() {
   vertexScale(p3);
   if (p4.x < p5.x) {
     vertexScale(p4);
-  } 
-  else {
+  } else {
     vertexScale(p5);
   }
   vertexScale(p6);
@@ -87,18 +83,46 @@ void pantShapeB() {
    vertexScale(p17);
    }
    */
-   //close pant lower if yoke is on, null pointer
-/*  if (yokeTF ==true) {
-    vertexScale(p17a);
-    vertexScale(p19a);
-  } 
-  else { */
-    vertexScale(p18);
-    vertexScale(p19);
- // }
+  //close pant lower if yoke is on, null pointer
+  /*  if (yokeTF ==true) {
+   vertexScale(p17a);
+   vertexScale(p19a);
+   } 
+   else { */
+  vertexScale(p18);
+  vertexScale(p19);
+  // }
   bezierVertexScale(cpp4, cpp3, p21);
   vertexScale(p22);
   vertexScale(p24);
+  endShape(CLOSE);
+}
+
+void baselShapeF() {
+  stroke(0);
+  noFill();
+  beginShape();
+  vertexScale(v1);
+  vertexScale(v2);
+  vertexScale(v3);
+  vertexScale(v4);
+  bezierVertexScale(cpp2,cpp1,v5);
+  vertexScale(v6);
+  vertexScale(v7);
+  endShape(CLOSE);
+}
+
+void baselShapeB() {
+  stroke(0);
+  noFill();
+  beginShape();
+    vertexScale(v8);
+  vertexScale(v9);
+  vertexScale(v10);
+  vertexScale(v11);
+  bezierVertexScale(cpp3,cpp3,v12);
+  vertexScale(v13);
+  vertexScale(v14);
   endShape(CLOSE);
 }
 
@@ -112,8 +136,7 @@ void pantShapeSAF() {
   vertexScale(sa3);
   if (sa4.x < sa5.x) {
     vertexScale(sa4);
-  } 
-  else {
+  } else {
     vertexScale(sa5);
   }
   vertexScale(sa6);

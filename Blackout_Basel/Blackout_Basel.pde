@@ -96,14 +96,14 @@ void draw() {
 
   if (gridTF == true) {
     grid();
-    }
+  }
 
-    if ( draftingTF == true) {
-      pushMatrix();
-      translateScale (4, 6);
-      drawDraftingPoints();
-      popMatrix();
-    }
+  if ( draftingTF == true) {
+    pushMatrix();
+    translateScale (4, 6);
+    drawDraftingPoints();
+    popMatrix();
+  }
 
   if (yardsticksTF == true) {
     pushMatrix();
@@ -164,17 +164,19 @@ void draw() {
     pantShapeB();
     popMatrix();
   }
-  
+
   if (baselTF == true) {
     //front
     pushMatrix();
     translateScale (14, 6);
     drawBaselPointsF();
+    baselShapeF();
     popMatrix();
     //back
     pushMatrix();
     translateScale (30, 6);
     drawBaselPointsB();
+    baselShapeB();
     popMatrix();
   }
 
