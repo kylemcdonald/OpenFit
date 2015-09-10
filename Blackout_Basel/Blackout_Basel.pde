@@ -175,6 +175,8 @@ void draw() {
     //back
     pushMatrix();
     translateScale (30, 6);
+    //rotate(PI);
+    //translateScale(-25,-40);
     drawBaselPointsB();
     baselShapeB();
     popMatrix();

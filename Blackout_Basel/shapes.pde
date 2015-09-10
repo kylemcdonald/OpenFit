@@ -107,8 +107,7 @@ void baselShapeF() {
   vertexScale(v3);
   vertexScale(v4);
   bezierVertexScale(cpp2,cpp1,v5);
-  vertexScale(v6);
-  vertexScale(v7);
+  bezierVertexScale(v6,v6,v7);
   endShape(CLOSE);
 }
 
@@ -120,9 +119,8 @@ void baselShapeB() {
   vertexScale(v9);
   vertexScale(v10);
   vertexScale(v11);
-  bezierVertexScale(cpp3,cpp3,v12);
-  vertexScale(v13);
-  vertexScale(v14);
+  bezierVertexScale(cpp4,cpp3,v12);
+  bezierVertexScale(v13,v13,v14);
   endShape(CLOSE);
 }
 
@@ -164,7 +162,7 @@ void pantShapeSAB() {
    */
   vertexScale(sa18);
   vertexScale(sa19);
-  bezierVertexScale(cpp4, cpp3, sa21);
+  bezierVertexScale(cpp3, cpp4, sa21);
   vertexScale(sa22);
   vertexScale(sa24);
   endShape(CLOSE);

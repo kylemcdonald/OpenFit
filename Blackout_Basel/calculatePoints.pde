@@ -423,5 +423,12 @@ void baselPointsB() {
   v12 = p21.get();
   v13= p22.get();
   v14= p24.get();
+  
+  // need a more accurate way of finding the location of v9, using v2 as a reference
+  // checking that outer leg distances aren't so distinct
+  //float distF = v3.dist(v1);
+  //float distB = v10.dist(v8);
+
 }
+
 
