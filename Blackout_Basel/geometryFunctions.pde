@@ -1,3 +1,26 @@
+//return missing point on two similar triangles (triangle a,b,c and triangle d,e,x; solve for x)
+PVector trianglePoint(PVector a, PVector b, PVector c, PVector d, PVector e) {
+
+  // get magnitudes in order to scale later
+  float mag31 = PVector.dist(b, a);
+  float mag23 = PVector.dist(c, b);
+  float mag64 = PVector.dist(d, e);
+  
+  // get angle of angle P1
+  PVector ab = PVector.sub(b, a);
+  PVector bc = PVector.sub(c, b);
+  float angle = PI - PVector.angleBetween(ab, bc);
+  
+  // get vector going from p10 to p9
+  PVector t = PVector.sub(d, e);   // start with p8->p10
+  t.rotate(angle);                    // rotate it by found angle
+  t.setMag(mag23 * mag64 / mag31);    // rescale it 
+  
+  // finally get p9 by adding t to p10
+  PVector x = PVector.add(e, t);
+  return x;
+}
+
 // Rotate a vector in 2D
 void rotate2D(PVector v, float angle) {
   float theta = map(angle, 0, 360, 0, TWO_PI);

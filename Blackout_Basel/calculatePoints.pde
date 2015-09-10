@@ -415,19 +415,14 @@ void baselPointsB() {
   v10 = p18.get();
   v10.x -= 1;  //(make the pants an inch wider at the waist)
   v10.y -= 2;  //(make the pants two inches taller)
-  v9 = v10.get();
-  v9.y = p14.y;
-  v9.y -= baselStyleY;
-  v9.x -= baselStyleX;
+
   v11 = p19.get();
   v12 = p21.get();
   v13= p22.get();
   v14= p24.get();
   
   // need a more accurate way of finding the location of v9, using v2 as a reference
-  // checking that outer leg distances aren't so distinct
-  //float distF = v3.dist(v1);
-  //float distB = v10.dist(v8);
+  v9 = trianglePoint(v1,v3,v2,v8,v10);
 
 }
 
