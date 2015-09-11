@@ -9,39 +9,56 @@ Working towards open source patterns for jeans, based on traditional pattern mak
 A collaboration between [Kyle McDonald](http://kylemcdonald.net/) and [Lisa Kori Chung](http://lisakori.net/).
 
 
-## Instructions for measuring applications
+## Notes for Measuring
 
-1) Find and put on bright chromakey/neon leggings. Wear them in front of a background with high contrast from the leggings color (having a black backdrop works best if possible);
+### Set the scene
 
-2) Run the application `MeasureRealtime`. Take one picture from the front, and one profile picture from the side, making sure to get the entire leggings into the frame and keeping your hands and other obstructions not in front of the leggings.  
+You will need to wear a pair of chromakey/neon leggings while measuring. The Kinect should be placed on a level surface around crotch height, and waist to feet of the subject should clearly take the majority of the frame. Light on the subject should be diffused, not harsh. A black background works well, but anything neutral or distincly different from the color of the leggings should work. 
 
-3) After this, you should have produced 4 pictures in the bin/data folder of `MeasureRealtime` -- `0-color.png`, `0-depth.png`, `1-color.png`, and `1-depth.png`.  Copy these images into the bin/data folder of the application `Measure` (and optionally, `GreenScreen`).
+### Test using the Green Screen helper app
 
-4) The application `Measure` derives your pants measurements by using computer vision to isolate the contours of the pants and sample the position of the relevant measurement locations (hips, butt, thighs, midthighs, knees, ankles). To do this you must adjust the parameters in the sliders to the left to get the right values. You may optionally use `GreenScreen` to do this first and copy the values, or you may use `Measure` directly.
+Run the application `Measure` and make the application window fullscreen. Click `Use Kinect` to turn on the Kinect (images should appear on the left hand side). Make sure to get the feet to the waist into the frame and keep hands and other obstructions out of the way. Click `Sample Front` to take a images (color and depth) of your subject facing the Kinect and `Sample Side` to take images from the side. 
+
+Click "Export". It will bring up a save file dialog. Upon export, there should be four images in the folder and a json file. Copy the color and depth front pair of images into the bin/data folder of the application `GreenScreen`. Run `GreenScreen` and adjust the parameters to get an even mask of the leggings. 
 
  - Start by adjusting the sliders "Hue center" and "Hue range" to select the color hue of the leggings, and a tolerance (Hue range) parameter (the smaller you can make the range without losing the leggings, the better).
  - Adjust background threshold to remove anything behind the person in the frame.
  - Adjust Saturation/Value padding to isolate the leggings from the rest of the picture (low value works best)
  - Adjust the erosion and dilation sliders to fill in holes in the found contour
- - Finally, adjust the horizontal lines corresponding to "Hip", "Ankle", "Calf", "Knee", "Midthigh", "Thigh", and "Butt" to properly line up with the body.
+
+Take note of parameter values as they will be of use in the next step. Adjust the scene and try sampling images again if a clear mask cannot be made. 
+
+### Measuring
+
+The application `Measure` derives your pants measurements by using computer vision to isolate the contours of the pants and sample the position of the relevant measurement locations (hips, butt, thighs, midthighs, knees, ankles).
+
+The `Measure` app has four images in the default folder (front and side, color and depth). These can be replaced with your own photos. 
+
+When the `Measure` app is loaded , it will automatically load saved parameter values, if there are any. Parameters can be set using values derived in the `GreenScreen` application. Pressing `s` will save values and overwrite the previous save, pressing `l` will load values. 
+
+Hold `1`,`2`, and `3` respectively to set the location of floor points 1,2, and 3. The three floor points give us the plane of reference; if all three points are evenly spaced on the floor around the subject it will be more accurate than if two points are directly adjacent to each other.  
+
+Adjust "Hip", "Ankle", and "HipSlope" first. "Hipslope" is viewable on the side and allows the user to make the rise of the pants higher in the back than the front. 
+
+Once those are set, "Calf", "Knee", "Midthigh", "Thigh", and "Butt" can be set. 
 
 Body parts
- * Hips - Top corners of the leggings
- * Butt - widest part of the leggings
+ * Hips - Top outer corners of the leggings
+ * Butt - widest part of the body
  * Thigh - line up with crotch
  * Midthigh - between crotch and knees
  * Knees - knees
  * Ankles - ankles
 
-5) You should have a picture that looks approximately like this, where the correct contour points are lined on the outside of the leggings.
+Once, the correct contour points are lined on the outside of the leggings click "Export". It will bring up a save file dialog.
 
-Click "Export". It will bring up a save file dialog.
-
-You should now have a folder with the 4 pictures from step 3 and a new file called `measurements.json`. This file has the correct inch measurements, which can be exported to the Processing pattern generating applications.
+A folder will be created with 4 pictures (color and depth, front and side) and a new file called `measurements.json`. This file has the correct inch measurements, which can be exported to the Processing pattern generating applications.
 
 
 ### Notes/bugs
 
-In the Measure application, occasionally some of the sliders become inaccessible/nan/infinity. This is a bug which will be fixed in a future release. For now you can reset the sliders by tapping the spacebar.
+Sometimes the ankleToFloor measurement is wrong. This should be fixed soon. 
 
-Also, if the export button doesn't bring up a save dialog, click Shift-S (capital S).
+In the Measure application, if some of the sliders become inaccessible/nan/infinity, you can reset the sliders by tapping the spacebar.
+
+If the export button doesn't bring up a save dialog, click Shift-S (capital S).
