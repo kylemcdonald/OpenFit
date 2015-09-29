@@ -4,8 +4,8 @@ import processing.pdf.*;
 import controlP5.*;
 ControlP5 cp5;
 
-static int screenWidth = 700;
-static int screenHeight = 600;
+static int displayWidth = 700;
+static int displayHeight = 600;
 float pointSize = 6;
 float drawingScale = 13;
 
@@ -60,7 +60,7 @@ PVector sa13out, sa18, sa25, sa24, sa19, sa23, sa14out; //intersect at distance
 PVector sa4Aout, sa21ControlPoint, sa16, sa2b2, sa4Bout; //shift control points
 
 void setup() {
-  size(screenWidth, screenHeight);
+  size(displayWidth, displayHeight);
 
   font = createFont("Arial", 12);
   textFont(font);
@@ -353,58 +353,58 @@ void bezierVertexScale (PVector a, PVector b, PVector c) {
 void update() {
   // mark points
   A = new PVector(0, 0);
-  B = A.get();
+  B = A.copy();
   B.y += 5./8 + sideseam;
-  p1 = A.get();
+  p1 = A.copy();
   p1.y += 5./8;
-  p2 = p1.get();
+  p2 = p1.copy();
   p2.y += crotchDepth;
   p3 = PVector.add(B, p2);
   p3.div(2);
-  p4 = p3.get();
+  p4 = p3.copy();
   p4.y -= inseam / 10.;
 
   // add circumference measurements
-  p5 = p2.get();
+  p5 = p2.copy();
   p5.y -= (hipCircumference / 2.) / 10. + (1 + 1/4.);
-  p6 = p5.get();
+  p6 = p5.copy();
   p6.x += hipCircumference / 4. - 3/8.;
-  p7 = p6.get();
+  p7 = p6.copy();
   p7.y = p1.y;
-  p8 = p6.get();
+  p8 = p6.copy();
   p8.y = p2.y;
-  p6a = p6.get();
+  p6a = p6.copy();
   p6a.x += ((hipCircumference / 2.) / 10.) + (1/4.);
 
   // establish the crease line
   p9 = PVector.add(p5, p6a);
   p9.div(2);
-  p10 = p9.get();
+  p10 = p9.copy();
   p10.y = p8.y;
-  p11 = p9.get();
+  p11 = p9.copy();
   p11.y = p4.y;
-  p12 = p9.get();
+  p12 = p9.copy();
   p12.y = B.y;
 
   // shape the leg
-  p13 = p12.get();
+  p13 = p12.copy();
   p13.x -= (hemCircumference / 4.) - (3/8.);
-  p14 = p12.get();
+  p14 = p12.copy();
   p14.x += (hemCircumference / 4.) - (3/8.);
   p2b = intersectAtDistance(p14, p6a, p2, p8);
   p2c = PVector.add(p2b, p8);
   p2c.div(2);
-  p8b = p8.get();
+  p8b = p8.copy();
   p8b.y -= (p2c.x - p8.x);
 
   // adjust for the stomach
-  p7a = p7.get();
+  p7a = p7.copy();
   p7a.x += stomachOffset;
-  p6b = p6.get();
+  p6b = p6.copy();
   p6b.x += crotchOffset;
 
   // curve the waistline
-  D = p7a.get();
+  D = p7a.copy();
   D.x = p9.x;
   Aa = pointOnLine(D, A, 1., false);
   p5a = PVector.add(p5, A);
@@ -412,41 +412,41 @@ void update() {
 
   //BACK DRAFT:
   //find the center back
-  p15 = p9.get();
+  p15 = p9.copy();
   p15.x += 3/8.;
-  p16 = p15.get();
+  p16 = p15.copy();
   p16.x += (((hipCircumference / 4.) + 3/8.)/ 4.);
-  p17 = p2.get();
+  p17 = p2.copy();
   p17.y -= derriereShape; 
 
   //shift the hips
-  p18 = p16.get();
+  p18 = p16.copy();
   p18.x -= (hipCircumference / 4.) + 3/8.;
-  p20 = p15.get();
+  p20 = p15.copy();
   p20.x += (p15.x-p18.x); 
 
   //draw the outside lines
   p4a = intersectAtDistance(p13, p5, p4, p11);
   p4b = intersectAtDistance(p6a, p14, p4, p11);
-  p13out = p13.get();
+  p13out = p13.copy();
   p13out.x -= 3/4.;
-  p14out = p14.get();
+  p14out = p14.copy();
   p14out.x += 3/4.;
-  p4Aout = p4a.get();
+  p4Aout = p4a.copy();
   p4Aout.x -= 3/4.;
-  p4Bout = p4b.get();
+  p4Bout = p4b.copy();
   p4Bout.x += 3/4.;
 
   p21 = intersectAtDistance(p18, p4Aout, p1, p7);
 
   // draw parallel and center back line
   float slope = (p17.y-p16.y)/(p17.x-p16.x);
-  pParallel = p12.get();
+  pParallel = p12.copy();
   pParallel.y = (pParallel.x-p18.x);
   pParallel.y *= slope;
   pParallel.y += p18.y;
   slope = - (1/slope);
-  pCBtop = p11.get();
+  pCBtop = p11.copy();
   pCBtop.x += 1+ 3/4.; // picked 1.75" arbitrarily, CB just needs to extend above waistline
   pCBtop.y = (pCBtop.x-p16.x); 
   pCBtop.y *= slope;
@@ -472,9 +472,9 @@ void update() {
   h2b = parallelLinePoint(p7a, p2b, seamAllowance, false, false);
   l2b = parallelLinePoint(p2b, p14, seamAllowance, true, false);
   h14 = parallelLinePoint(p2b, p14, seamAllowance, false, false);
-  l14 = p14.get();
+  l14 = p14.copy();
   l14.y += seamAllowance*2; // *2 because need double seam allowance for hem
-  l13 = p13.get();
+  l13 = p13.copy();
   l13.y += seamAllowance*2;
 
   sa13 = intersectAtDistance(l14, l13, lp5, h13);
@@ -502,9 +502,9 @@ void update() {
   l19 = parallelLinePoint(p23, p19, seamAllowance, false, false);
   h14out = parallelLinePoint(p14out, p23, seamAllowance, true, false);
   l23 = parallelLinePoint(p14out, p23, seamAllowance, false, false);
-  l14out = p14out.get();
+  l14out = p14out.copy();
   l14out.y += seamAllowance*2; // *2 because need double seam allowance for hem
-  l13out = p13out.get();
+  l13out = p13out.copy();
   l13out.y += seamAllowance*2;
 
   sa13out = intersectAtDistance(l14out, l13out, l18, h13out);
@@ -595,7 +595,7 @@ PVector circleIsecLine(PVector a, PVector b, PVector c, float r, boolean posNeg)
 // a and b are two points, seam allowance is distance, toggle between new points c and d, toggle direction
 PVector parallelLinePoint(PVector a, PVector b, float seamAllowance, boolean togglePoint, boolean posNeg) {
   float slope = (b.y - a.y)/(b.x - a.x);
-  float yintercept = b.y - (slope*b.x);
+  //float yintercept = b.y - (slope*b.x);
   float perpSlope = -(1/slope);
   float aYintercept = a.y - (perpSlope*a.x); // y intercept for perpendicular from point a
   float bYintercept = b.y - (perpSlope*b.x); // y intercept for perpendicular from point b
@@ -663,4 +663,3 @@ PVector shiftControlPoint (PVector a, PVector b, PVector c, float seamAllowance,
   d.y = (d.x*slope) + yintercept; 
   return new PVector(d.x, d.y);
 }
-
